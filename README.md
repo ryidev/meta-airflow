@@ -1,32 +1,320 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🏠 Property Rental App - React Native
 
-# Getting Started
+Modern property rental mobile application built with React Native 0.83.1 and TypeScript.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 📚 Documentation
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- **[START_HERE.md](START_HERE.md)** - Panduan utama untuk memulai
+- **[QUICKSTART.md](QUICKSTART.md)** - Setup cepat 5 menit
+- **[RUN_GUIDE.md](RUN_GUIDE.md)** - Cara menjalankan aplikasi
+- **[DEPENDENCIES.md](DEPENDENCIES.md)** - Daftar lengkap dependencies
+- **[ANDROID_SETUP_WINDOWS.md](ANDROID_SETUP_WINDOWS.md)** - Setup Android di Windows
+- **[API_INTEGRATION.md](API_INTEGRATION.md)** - Dokumentasi API
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Panduan troubleshooting
+- **[QUICK_FIX.md](QUICK_FIX.md)** - Quick reference untuk error umum
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+---
 
-```sh
-# Using npm
-npm start
+## ✨ Features
 
-# OR using Yarn
-yarn start
+### Authentication
+- ✅ Login & Register dengan validasi
+- ✅ Forgot Password dengan email reset
+- ✅ JWT Token authentication
+- ✅ Auto-login persistence
+- 🔜 OAuth (Google Sign-In)
+
+### Property Management
+- ✅ Property listing dengan featured properties
+- ✅ Property detail dengan image gallery
+- ✅ Create property dengan multi-image upload
+- ✅ Edit property
+- ✅ Search & filter properties
+- ✅ Amenities selection
+
+### User Features
+- ✅ Favorites/Wishlist
+- ✅ Booking system
+- ✅ User profile management
+- ✅ Avatar upload
+- ✅ Rating & reviews
+- 🔜 Price prediction (AI)
+
+### UI/UX
+- ✅ Responsive design
+- ✅ Bottom tab navigation
+- ✅ Stack navigation
+- ✅ Loading states
+- ✅ Error handling
+- ✅ Pull to refresh
+- ✅ Onboarding screen
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 20+
+- React Native CLI
+- **iOS:** macOS with Xcode & CocoaPods
+- **Android:** JDK 17 + Android Studio
+
+### Installation
+
+```bash
+# Clone repository
+git clone YOUR_REPO_URL
+cd testApp
+
+# Install dependencies
+npm install
+
+# iOS setup
+cd ios && pod install && cd ..
+
+# Android setup - Already configured!
 ```
 
-## Step 2: Build and run your app
+### Run Application
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+**iOS:**
+```bash
+npm run ios
+```
 
-### Android
-
-```sh
-# Using npm
+**Android:**
+```bash
 npm run android
+```
+
+**Metro Bundler:**
+```bash
+npm start
+```
+
+Lihat [RUN_GUIDE.md](RUN_GUIDE.md) untuk instruksi lengkap.
+
+---
+
+## 📦 Tech Stack
+
+- **Framework:** React Native 0.83.1
+- **Language:** TypeScript 5.8.3
+- **Navigation:** React Navigation 7 (Stack & Bottom Tabs)
+- **HTTP Client:** Axios
+- **Storage:** AsyncStorage
+- **Icons:** React Native Vector Icons (Ionicons)
+- **Image Picker:** React Native Image Picker
+- **Gestures:** React Native Gesture Handler
+
+Lihat [DEPENDENCIES.md](DEPENDENCIES.md) untuk detail lengkap.
+
+---
+
+## 📱 Screens
+
+### Authentication Flow
+- **OnboardingScreen** - Welcome screen dengan property images
+- **LoginScreen** - Email/password login dengan social auth option
+- **RegisterScreen** - Sign up dengan validasi
+- **ForgotPasswordScreen** - Reset password via email
+
+### Main App
+- **HomeScreen** - Property listing & featured properties
+- **PropertyDetailScreen** - Property info dengan image gallery
+- **CreatePropertyScreen** - Add new property dengan images
+- **EditPropertyScreen** - Update property data
+- **FavoritesScreen** - User's saved properties
+- **BookingsScreen** - User's booking history
+- **ProfileScreen** - User profile & settings
+
+---
+
+## 🏗️ Project Structure
+
+```
+testApp/
+├── src/
+│   ├── components/        # Reusable components
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── PropertyCard.tsx
+│   │   ├── Loading.tsx
+│   │   └── ErrorBoundary.tsx
+│   ├── screens/          # Screen components
+│   │   ├── auth/         # Auth screens
+│   │   ├── home/         # Home screens
+│   │   ├── property/     # Property screens
+│   │   └── OnboardingScreen.tsx
+│   ├── navigation/       # Navigation setup
+│   │   ├── RootNavigator.tsx
+│   │   ├── AuthNavigator.tsx
+│   │   ├── MainNavigator.tsx
+│   │   └── HomeNavigator.tsx
+│   ├── services/         # API services
+│   │   ├── api.ts
+│   │   ├── authService.ts
+│   │   ├── propertyService.ts
+│   │   └── bookingService.ts
+│   ├── context/          # React Context
+│   │   └── AuthContext.tsx
+│   ├── types/            # TypeScript types
+│   │   └── index.ts
+│   ├── utils/            # Utility functions
+│   │   ├── storage.ts
+│   │   └── helpers.ts
+│   ├── constants/        # App constants
+│   │   ├── colors.ts
+│   │   └── index.ts
+│   └── styles/           # Common styles
+│       └── common.ts
+├── android/              # Android native code
+├── ios/                  # iOS native code
+├── App.tsx               # App entry point
+└── index.js              # Root entry point
+```
+
+---
+
+## 🔧 Configuration
+
+### Update API URL
+
+Edit `src/constants/index.ts`:
+```typescript
+export const API_BASE_URL = 'YOUR_API_URL';
+```
+
+### Environment Variables
+
+Create `.env` file (optional):
+```env
+API_BASE_URL=https://your-api.com/api
+```
+
+---
+
+## 🎨 Customization
+
+### Colors
+
+Edit `src/constants/colors.ts`:
+```typescript
+export const Colors = {
+  primary: '#6366F1',      // Indigo
+  secondary: '#10B981',    // Green
+  // ... more colors
+};
+```
+
+### Fonts
+
+iOS: Add fonts to `ios/testApp/Fonts/`  
+Android: Add fonts to `android/app/src/main/assets/fonts/`
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run tests
+npm test
+
+# Run with coverage
+npm test -- --coverage
+```
+
+---
+
+## 📤 Build Release
+
+### Android APK
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+Output: `android/app/build/outputs/apk/release/`
+
+### iOS
+```bash
+# Open Xcode
+open ios/testApp.xcworkspace
+
+# Product → Archive
+```
+
+---
+
+## 🐛 Common Issues
+
+### Error: Metro Port 8081 Busy
+```bash
+lsof -ti:8081 | xargs kill -9
+npm start
+```
+
+### Error: CocoaPods Failed
+```bash
+cd ios
+rm -rf Pods Podfile.lock
+pod install
+cd ..
+```
+
+### Error: Gradle Build Failed
+```bash
+cd android
+./gradlew clean
+cd ..
+npm run android
+```
+
+Lihat [TROUBLESHOOTING.md](TROUBLESHOOTING.md) untuk lebih lengkap.
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👥 Authors
+
+- Your Team Name
+
+---
+
+## 🙏 Acknowledgments
+
+- React Native Team
+- React Navigation Team
+- All contributors
+
+---
+
+## 📞 Support
+
+- Email: support@yourapp.com
+- GitHub Issues: [Create an issue](YOUR_REPO_URL/issues)
+- Documentation: [See docs](./START_HERE.md)
+
+---
+
+**Built with ❤️ using React Native**
 
 # OR using Yarn
 yarn android
