@@ -2,13 +2,13 @@ import React from 'react';
 import {
   Dimensions,
   Image,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../types';
 
@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loginButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#0F6980',
     borderRadius: 28,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#0F6980',
+    shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
