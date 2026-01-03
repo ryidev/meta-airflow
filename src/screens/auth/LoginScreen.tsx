@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { CommonActions } from '@react-navigation/native';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { googleOAuthService } from '../../services';
@@ -25,11 +26,13 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Animation values
   const fadeAnim = new Animated.Value(0);
@@ -58,14 +61,24 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     ]).start();
   }, []);
 
-  const handleLogin = () => {
-    // Langsung navigate ke Main screen tanpa auth
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      })
-    );
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await login({ email, password });
+      // Navigation handled by AuthContext after successful login
+    } catch (error: any) {
+      Alert.alert(
+        'Login Failed',
+        error.message || 'Invalid email or password'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -198,10 +211,13 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Login Button */}
           <TouchableOpacity
-            style={styles.loginButton}
+            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
             onPress={handleLogin}
+            disabled={isLoading}
           >
-            <Text style={styles.loginButtonText}>Log in</Text>
+            <Text style={styles.loginButtonText}>
+              {isLoading ? 'Logging in...' : 'Log in'}
+            </Text>
           </TouchableOpacity>
 
           {/* Forgot Password */}
@@ -219,9 +235,15 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
+          <TouchableOpacity
+            style={[styles.googleButton, isLoading && styles.googleButtonDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={isLoading}
+          >
             <Icon name="logo-google" size={20} color="#DB4437" />
-            <Text style={styles.googleButtonText}>Sign in with Google</Text>
+            <Text style={styles.googleButtonText}>
+              {isLoading ? 'Signing in...' : 'Sign in with Google'}
+            </Text>
           </TouchableOpacity>
 
           {/* Sign Up Link */}
@@ -299,6 +321,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     gap: 12,
+  },
+  googleButtonDisabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
+    opacity: 0.6,
   },
   googleButtonText: { fontSize: 16, fontWeight: '600', color: '#1F2937' },
   signupContainer: {
