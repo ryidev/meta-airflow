@@ -279,7 +279,14 @@ const PropertyDetailFullScreen: React.FC = () => {
           <Text style={styles.priceAmount}>${property?.rented || 2700}</Text>
           <Text style={styles.priceUnit}> /month</Text>
         </View>
-        <TouchableOpacity style={styles.rentButton}>
+        <TouchableOpacity 
+          style={styles.rentButton}
+          activeOpacity={0.8}
+          onPress={() => {
+            console.log('Rent button pressed', property);
+            (navigation as any).navigate('RentBooking', { property });
+          }}
+        >
           <Text style={styles.rentButtonText}>Rent</Text>
         </TouchableOpacity>
       </View>
@@ -583,6 +590,10 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -596,6 +607,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 10,
+    zIndex: 1000,
   },
   priceContainer: {
     flexDirection: 'row',

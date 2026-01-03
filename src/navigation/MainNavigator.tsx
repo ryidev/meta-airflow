@@ -4,8 +4,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { MainTabParamList } from '../types';
 import ExploreNavigator from './ExploreNavigator';
 import HomeStackNavigator from './HomeStackNavigator';
+import ProfileNavigator from './ProfileNavigator';
 import SavedScreen from '../screens/home/SavedScreen';
-import ProfileTabScreen from '../screens/home/ProfileTabScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -79,7 +79,7 @@ const MainNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileTabScreen}
+        component={ProfileNavigator}
         options={{
           tabBarLabel: 'Profile',
         }}

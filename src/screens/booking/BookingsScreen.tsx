@@ -8,10 +8,10 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
-import { Booking } from '../types';
-import { bookingService } from '../services/bookingService';
-import { Colors } from '../constants';
-import Loading from '../components/Loading';
+import { Booking } from '../../types';
+import { bookingService } from '../../services/bookingService';
+import { Colors } from '../../constants';
+import Loading from '../../components/Loading';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const BookingsScreen: React.FC = () => {

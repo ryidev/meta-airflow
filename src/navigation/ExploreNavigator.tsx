@@ -1,14 +1,16 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import ExploreScreen from '../screens/home/ExploreScreen';
-import ExploreDetail from '../screens/home/ExploreDetail';
+import ExploreScreen from '../screens/explore/ExploreScreen';
+import ExploreDetail from '../screens/explore/ExploreDetail';
 import PropertyDetailFullScreen from '../screens/property/PropertyDetailFullScreen';
+import RentBookingScreen from '../screens/booking/RentBookingScreen';
 import { Colors } from '../constants';
 
 export type ExploreStackParamList = {
   ExploreScreen: undefined;
   ExploreDetail: undefined;
   PropertyDetailFull: { property: any };
+  RentBooking: { property: any };
 };
 
 const Stack = createStackNavigator<ExploreStackParamList>();
@@ -43,6 +45,11 @@ const ExploreNavigator: React.FC = () => {
       <Stack.Screen
         name="PropertyDetailFull"
         component={PropertyDetailFullScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="RentBooking"
+        component={RentBookingScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

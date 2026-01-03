@@ -1,13 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const ProfileTabScreen: React.FC = () => {
+  const navigation = useNavigation();
+
   const menuItems = [
-    { id: 1, icon: 'person-outline', title: 'Personal details' },
-    { id: 2, icon: 'settings-outline', title: 'Settings' },
-    { id: 3, icon: 'card-outline', title: 'Payment details' },
-    { id: 4, icon: 'help-circle-outline', title: 'FAQ' },
+    { id: 1, icon: 'person-outline', title: 'Personal details', screen: 'Personal' },
+    { id: 2, icon: 'settings-outline', title: 'Settings', screen: 'Settings' },
+    { id: 3, icon: 'card-outline', title: 'Payment details', screen: null },
+    { id: 4, icon: 'help-circle-outline', title: 'FAQ', screen: null },
   ];
 
   return (
@@ -29,7 +32,15 @@ const ProfileTabScreen: React.FC = () => {
       {/* Menu Items */}
       <View style={styles.menuSection}>
         {menuItems.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.menuItem}>
+          <TouchableOpacity 
+            key={item.id} 
+            style={styles.menuItem}
+            onPress={() => {
+              if (item.screen) {
+                navigation.navigate(item.screen as never);
+              }
+            }}
+          >
             <View style={styles.iconContainer}>
               <Icon name={item.icon} size={24} color="#000" />
             </View>
@@ -72,9 +83,14 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 60,
-    backgroundColor: '#E9D5FF',
+    backgroundColor: '#dbd5e1ff',
     padding: 4,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 3,
   },
   avatar: {
     width: '100%',
@@ -93,7 +109,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#dadadaff',
     marginHorizontal: 24,
     marginVertical: 10,
   },
@@ -110,9 +126,14 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
   menuText: {
     flex: 1,
