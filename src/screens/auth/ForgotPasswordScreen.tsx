@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -24,6 +25,43 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Animation values
+  const fadeAnim = new Animated.Value(0);
+  const scaleIconAnim = new Animated.Value(0);
+  const bounceAnim = new Animated.Value(0);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleIconAnim, {
+        toValue: 1,
+        tension: 40,
+        friction: 5,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Bounce animation for icon
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -86,22 +124,52 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Icon Section */}
-        <View style={styles.iconSection}>
+        <Animated.View 
+          style={[
+            styles.iconSection,
+            {
+              opacity: fadeAnim,
+              transform: [
+                { scale: scaleIconAnim },
+                {
+                  translateY: bounceAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -10],
+                  }),
+                },
+              ],
+            }
+          ]}
+        >
           <View style={styles.iconContainer}>
             <Icon name="lock-closed-outline" size={60} color="#6366F1" />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Title Section */}
-        <View style={styles.titleSection}>
+        <Animated.View 
+          style={[
+            styles.titleSection,
+            {
+              opacity: fadeAnim,
+            }
+          ]}
+        >
           <Text style={styles.heading}>Forgot Password?</Text>
           <Text style={styles.subheading}>
             Don't worry! Enter your email address and we'll send you a link to reset your password.
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Form Section */}
-        <View style={styles.formSection}>
+        <Animated.View 
+          style={[
+            styles.formSection,
+            {
+              opacity: fadeAnim,
+            }
+          ]}
+        >
           {/* Email Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Email Address</Text>
@@ -148,15 +216,22 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.backToLoginLink}>Log In</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Info Box */}
-        <View style={styles.infoBox}>
+        <Animated.View 
+          style={[
+            styles.infoBox,
+            {
+              opacity: fadeAnim,
+            }
+          ]}
+        >
           <Icon name="information-circle-outline" size={20} color="#6366F1" />
           <Text style={styles.infoText}>
             If you don't receive an email within 5 minutes, check your spam folder or try again.
           </Text>
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

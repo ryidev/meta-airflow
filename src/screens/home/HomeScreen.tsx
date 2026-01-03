@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,62 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const HomeScreen: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'rent' | 'buy'>('rent');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  // Animation values
+  const fadeAnim = new Animated.Value(0);
+  const slideHeaderAnim = new Animated.Value(-50);
+  const scaleSearchAnim = new Animated.Value(0.9);
+  const slideSection1Anim = new Animated.Value(50);
+  const slideSection2Anim = new Animated.Value(50);
+  const slideSection3Anim = new Animated.Value(50);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideHeaderAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleSearchAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideSection1Anim, {
+        toValue: 0,
+        duration: 500,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideSection2Anim, {
+        toValue: 0,
+        duration: 500,
+        delay: 450,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideSection3Anim, {
+        toValue: 0,
+        duration: 500,
+        delay: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   // Dummy data
   const nearProperties = [
@@ -122,7 +172,15 @@ const HomeScreen: React.FC = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <View style={styles.topBar}>
+        <Animated.View 
+          style={[
+            styles.topBar,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideHeaderAnim }]
+            }
+          ]}
+        >
           <View style={styles.locationContainer}>
             <Text style={styles.findText}>Find your place in</Text>
             <View style={styles.locationRow}>
@@ -133,14 +191,22 @@ const HomeScreen: React.FC = () => {
           </View>
           <View style={styles.avatarContainer}>
             <Image 
-              source={{ uri: 'https://i.pravatar.cc/150?img=12' }} 
+              source={{ uri: 'https://assets.pikiran-rakyat.com/crop/0x0:0x0/720x0/webp/photo/2025/09/26/1043297320.jpg' }} 
               style={styles.avatar} 
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
+        <Animated.View 
+          style={[
+            styles.searchContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleSearchAnim }]
+            }
+          ]}
+        >
           <Icon name="search" size={20} color="#94A3B8" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
@@ -150,12 +216,20 @@ const HomeScreen: React.FC = () => {
           <TouchableOpacity style={styles.filterButton}>
             <Icon name="options-outline" size={20} color="#000" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
       </View>
 
       {/* Near your location */}
-      <View style={styles.section}>
+      <Animated.View 
+        style={[
+          styles.section,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideSection1Anim }]
+          }
+        ]}
+      >
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>Near your location</Text>
@@ -168,10 +242,18 @@ const HomeScreen: React.FC = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
           {nearProperties.map(property => renderPropertyCard(property))}
         </ScrollView>
-      </View>
+      </Animated.View>
 
       {/* Top rated in Surabaya */}
-      <View style={styles.section}>
+      <Animated.View 
+        style={[
+          styles.section,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideSection2Anim }]
+          }
+        ]}
+      >
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>Top rated in Surabaya</Text>
@@ -183,10 +265,18 @@ const HomeScreen: React.FC = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
           {topRatedProperties.map(property => renderPropertyCard(property))}
         </ScrollView>
-      </View>
+      </Animated.View>
 
       {/* Your favorites */}
-      <View style={styles.section}>
+      <Animated.View 
+        style={[
+          styles.section,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideSection3Anim }]
+          }
+        ]}
+      >
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>your favorites</Text>
@@ -201,7 +291,7 @@ const HomeScreen: React.FC = () => {
             <Text style={styles.emptyFavText}>No favorites yet</Text>
           )}
         </ScrollView>
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 };
@@ -255,7 +345,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 50,
     paddingHorizontal: 16,
     height: 52,
   },

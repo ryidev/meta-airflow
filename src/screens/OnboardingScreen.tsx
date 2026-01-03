@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Dimensions,
   Image,
@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -21,6 +22,46 @@ interface Props {
 }
 
 const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
+  // Animation values
+  const fadeAnims = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+  const contentFadeAnim = useRef(new Animated.Value(0)).current;
+  const buttonSlideAnim = useRef(new Animated.Value(100)).current;
+
+  useEffect(() => {
+    // Stagger animation for images
+    const imageAnimations = fadeAnims.map((anim, index) => 
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 600,
+        delay: index * 150,
+        useNativeDriver: true,
+      })
+    );
+
+    Animated.parallel([
+      ...imageAnimations,
+      Animated.timing(contentFadeAnim, {
+        toValue: 1,
+        duration: 800,
+        delay: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(buttonSlideAnim, {
+        toValue: 0,
+        tension: 30,
+        friction: 8,
+        delay: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
   const handleLogin = () => {
     navigation.navigate('Login');
   };
@@ -37,83 +78,98 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.imageGrid}>
         {/* Row 1 */}
         <View style={styles.row}>
-          <View style={[styles.imageContainer, styles.largeImage]}>
+          <Animated.View style={[styles.imageContainer, styles.largeImage, { opacity: fadeAnims[0] }]}>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400' }}
               style={styles.image}
               resizeMode="cover"
             />
-          </View>
+          </Animated.View>
           <View style={styles.column}>
-            <View style={[styles.imageContainer, styles.mediumImage]}>
+            <Animated.View style={[styles.imageContainer, styles.mediumImage, { opacity: fadeAnims[1] }]}>
               <Image
                 source={{ uri: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400' }}
                 style={styles.image}
                 resizeMode="cover"
               />
-            </View>
-            <View style={[styles.imageContainer, styles.mediumImage]}>
+            </Animated.View>
+            <Animated.View style={[styles.imageContainer, styles.mediumImage, { opacity: fadeAnims[2] }]}>
               <Image
                 source={{ uri: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=400' }}
                 style={styles.image}
                 resizeMode="cover"
               />
-            </View>
+            </Animated.View>
           </View>
         </View>
 
         {/* Row 2 */}
         <View style={styles.row}>
-          <View style={[styles.imageContainer, styles.smallImage1]}>
+          <Animated.View style={[styles.imageContainer, styles.smallImage1, { opacity: fadeAnims[3] }]}>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400' }}
               style={styles.image}
               resizeMode="cover"
             />
-          </View>
-          <View style={[styles.imageContainer, styles.mediumImage]}>
+          </Animated.View>
+          <Animated.View style={[styles.imageContainer, styles.mediumImage, { opacity: fadeAnims[4] }]}>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=400' }}
               style={styles.image}
               resizeMode="cover"
             />
-          </View>
+          </Animated.View>
         </View>
 
         {/* Row 3 */}
         <View style={styles.row}>
-          <View style={[styles.imageContainer, styles.smallImage]}>
+          <Animated.View style={[styles.imageContainer, styles.smallImage, { opacity: fadeAnims[5] }]}>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800' }}
               style={styles.image}
               resizeMode="cover"
             />
-          </View>
-          <View style={[styles.imageContainer, styles.smallImage]}>
+          </Animated.View>
+          <Animated.View style={[styles.imageContainer, styles.smallImage, { opacity: fadeAnims[5] }]}>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800' }}
               style={styles.image}
               resizeMode="cover"
             />
-          </View>
-          <View style={[styles.imageContainer, styles.smallImage]}>
+          </Animated.View>
+          <Animated.View style={[styles.imageContainer, styles.smallImage, { opacity: fadeAnims[5] }]}>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800' }}
               style={styles.image}
               resizeMode="cover"
             />
-          </View>
+          </Animated.View>
         </View>
       </View>
 
       {/* Content Section */}
-      <View style={styles.content}>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: contentFadeAnim,
+          }
+        ]}
+      >
         <Text style={styles.heading}>Ready to start a new chapter?</Text>
         <Text style={styles.subheading}>RentVerse is here to guide you home</Text>
-      </View>
+      </Animated.View>
 
       {/* Buttons */}
-      <View style={styles.buttonContainer}>
+      <Animated.View 
+        style={[
+          styles.buttonContainer,
+          {
+            transform: [{ translateY: buttonSlideAnim }],
+            opacity: contentFadeAnim,
+          }
+        ]}
+      >
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginButtonText}>Log in</Text>
         </TouchableOpacity>
@@ -121,7 +177,7 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
         <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
           <Text style={styles.signupButtonText}>Sign up</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 };

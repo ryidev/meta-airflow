@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Animated,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +19,32 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const ProfileScreen: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Animation values
+  const fadeAnim = new Animated.Value(0);
+  const scaleAnim = new Animated.Value(0.8);
+  const slideAnim = new Animated.Value(50);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleImagePicker = async () => {
     try {
@@ -72,8 +99,22 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
+      <Animated.View 
+        style={[
+          styles.header,
+          {
+            opacity: fadeAnim,
+          }
+        ]}
+      >
+        <Animated.View 
+          style={[
+            styles.avatarContainer,
+            {
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
           {user.avatar ? (
             <Image source={{ uri: user.avatar }} style={styles.avatar} />
           ) : (
@@ -88,12 +129,20 @@ const ProfileScreen: React.FC = () => {
           >
             <Icon name="camera" size={20} color={Colors.white} />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.email}>{user.email}</Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.section}>
+      <Animated.View 
+        style={[
+          styles.section,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
         <Text style={styles.sectionTitle}>Account Information</Text>
 
         <View style={styles.infoCard}>
@@ -144,9 +193,17 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
         </View>
-      </View>
+      </Animated.View>
 
-      <View style={styles.section}>
+      <Animated.View 
+        style={[
+          styles.section,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
         <Text style={styles.sectionTitle}>Settings</Text>
 
         <TouchableOpacity style={styles.menuItem}>
@@ -178,16 +235,23 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.menuText}>About</Text>
           <Icon name="chevron-right" size={24} color={Colors.textSecondary} />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      <Button
-        title="Logout"
-        onPress={handleLogout}
-        variant="outline"
-        style={styles.logoutButton}
-      />
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }]
+        }}
+      >
+        <Button
+          title="Logout"
+          onPress={handleLogout}
+          variant="outline"
+          style={styles.logoutButton}
+        />
 
-      <Text style={styles.version}>Version 1.0.0</Text>
+        <Text style={styles.version}>Version 1.0.0</Text>
+      </Animated.View>
     </ScrollView>
   );
 };

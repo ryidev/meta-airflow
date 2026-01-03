@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -27,6 +28,33 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Animation values
+  const fadeAnim = new Animated.Value(0);
+  const slideAnim = new Animated.Value(50);
+  const scaleAnim = new Animated.Value(0.9);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleLogin = () => {
     // Langsung navigate ke Main screen tanpa auth
@@ -59,15 +87,31 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
+        <Animated.View 
+          style={[
+            styles.welcomeSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}
+        >
           <Text style={styles.heading}>Welcome Back!</Text>
           <Text style={styles.subheading}>
             Log In to your Placoo account to explore your dream place to live across the whole world!
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Form Section */}
-        <View style={styles.formSection}>
+        <Animated.View 
+          style={[
+            styles.formSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
           
           {/* Username/Email Input */}
           <View style={styles.inputGroup}>
@@ -168,7 +212,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
