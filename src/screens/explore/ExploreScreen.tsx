@@ -8,16 +8,30 @@ import {
   TextInput,
   Image,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
+import MapViewComponent from '../../components/MapView';
+import FilterModal, { FilterValues } from '../../components/FilterModal';
+import { propertyService } from '../../services/propertyService';
+import { Property } from '../../types';
 
 const ExploreScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const [selectedTab, setSelectedTab] = useState<'rent' | 'buy'>('rent');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<FilterValues>({
+    page: 1,
+    limit: 100, // Increased limit to show more properties on map
+    sortBy: 'newest',
+  });
 
   // Animation values
   const fadeAnim = new Animated.Value(0);
@@ -45,27 +59,62 @@ const ExploreScreen: React.FC = () => {
     ]).start();
   }, []);
 
-  // Dummy data
-  const nearProperties = [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400',
-      title: 'Cabin in Suraya',
-      rented: 526,
-    },
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
-      title: 'Modern Beach House',
-      rented: 750,
-    },
-    {
-      id: '3',
-      image: 'https://31sudirmansuites.com/wp-content/uploads/2019/11/FEATURED_10_20191115031104-814x534-1.jpg',
-      title: 'Modern Apartmen',
-      rented: 7989,
-    },
-  ];
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchProperties();
+    }, 300); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [filters.city, filters.minPrice, filters.maxPrice, filters.bedrooms, filters.bathrooms, filters.sortBy, searchText]);
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      // Only send filters that have values (not undefined/empty)
+      const params: any = {
+        page: filters.page || 1,
+        limit: filters.limit || 100,
+        sortBy: filters.sortBy || 'newest',
+      };
+
+      // Only add filter params if they have values
+      if (filters.city) params.city = filters.city;
+      if (filters.minPrice) params.minPrice = filters.minPrice;
+      if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+      if (filters.bedrooms) params.bedrooms = filters.bedrooms;
+      if (filters.bathrooms) params.bathrooms = filters.bathrooms;
+      if (searchText) params.search = searchText;
+
+      const response = await propertyService.getPropertiesWithFilters(params);
+      setProperties(response.properties || []);
+    } catch (error) {
+      console.error('Failed to fetch properties:', error);
+      // Set empty array on error to prevent crash
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+  };
+
+  const updateFilter = (key: string, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Map properties with coordinates
+  const mapProperties = properties
+    .filter(p => p.latitude && p.longitude)
+    .map(p => ({
+      id: p.id,
+      title: p.title,
+      latitude: p.latitude!,
+      longitude: p.longitude!,
+      price: p.price,
+      image: p.images?.[0],
+    }));
 
   const topRatedProperties = [
     {
@@ -86,15 +135,15 @@ const ExploreScreen: React.FC = () => {
   ];
 
   const renderPropertyCard = (property: any) => (
-    <TouchableOpacity 
-      key={property.id} 
+    <TouchableOpacity
+      key={property.id}
       style={[styles.propertyCard, { backgroundColor: colors.card }]}
       onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
       activeOpacity={0.9}
     >
       <Image source={{ uri: property.image }} style={styles.propertyImage} />
       <View style={styles.propertyInfo}>
-        
+
         <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
           {property.title}
         </Text>
@@ -106,19 +155,19 @@ const ExploreScreen: React.FC = () => {
     </TouchableOpacity>
   );
   const renderPropertyCard1 = (property: any) => (
-    <TouchableOpacity 
-      key={property.id} 
+    <TouchableOpacity
+      key={property.id}
       style={[styles.propertyCard1, { backgroundColor: colors.card }]}
       onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
       activeOpacity={0.9}
     >
       <Image source={{ uri: property.image }} style={styles.propertyImage} />
       <View style={styles.propertyInfo}>
-        
+
         <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
           {property.title}
         </Text>
- 
+
       </View>
     </TouchableOpacity>
   );
@@ -126,7 +175,7 @@ const ExploreScreen: React.FC = () => {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* Search Bar */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.searchContainer,
           {
@@ -141,12 +190,59 @@ const ExploreScreen: React.FC = () => {
           style={[styles.searchInput, { color: colors.text }]}
           placeholder="Search address, city, location"
           placeholderTextColor={colors.textSecondary}
+          value={searchText}
+          onChangeText={handleSearch}
         />
-        <TouchableOpacity style={styles.filterButton}>
+        <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilterModal(true)}>
           <Icon name="options-outline" size={20} color={colors.text} />
         </TouchableOpacity>
       </Animated.View>
-      <Animated.View 
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onApply={(newFilters) => {
+          setFilters(prev => ({ ...prev, ...newFilters }));
+        }}
+        initialFilters={filters}
+      />
+
+      {/* Map View */}
+      <Animated.View
+        style={[
+          styles.mapSection,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        {mapProperties && mapProperties.length > 0 ? (
+          <MapViewComponent
+            properties={mapProperties}
+            height={250}
+            onMarkerPress={(property) => {
+              console.log('Property clicked:', property);
+              (navigation as any).navigate('PropertyDetailFull', { propertyId: property.id });
+            }}
+          />
+        ) : (
+          <View style={[styles.emptyMapContainer, { backgroundColor: colors.surface }]}>
+            <Icon name="map-outline" size={48} color={colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No properties to display on map</Text>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Loading indicator */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0F6980" />
+        </View>
+      )}
+
+      <Animated.View
         style={[
           styles.section,
           {
@@ -164,12 +260,36 @@ const ExploreScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {nearProperties.map(property => renderPropertyCard(property))}
+          {properties && properties.length > 0 ? (
+            properties.slice(0, 10).map(property => (
+              <TouchableOpacity
+                key={property.id}
+                style={[styles.propertyCard, { backgroundColor: colors.card }]}
+                onPress={() => (navigation as any).navigate('PropertyDetailFull', { propertyId: property.id })}
+                activeOpacity={0.9}
+              >
+                <Image source={{ uri: property.images?.[0] || 'https://via.placeholder.com/400' }} style={styles.propertyImage} />
+                <View style={styles.propertyInfo}>
+                  <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
+                    {property.title}
+                  </Text>
+                  <View style={styles.rentedRow}>
+                    <Icon name="location-outline" size={14} color="#0F6980" />
+                    <Text style={styles.rentedText}>{property.city || ''}{property.city && property.state ? ', ' : ''}{property.state || ''}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No properties found</Text>
+            </View>
+          )}
         </ScrollView>
       </Animated.View>
 
-      {/* Top rated in Surabaya */}
-      <Animated.View 
+      {/* Top rated / Featured properties */}
+      <Animated.View
         style={[
           styles.section,
           {
@@ -182,10 +302,24 @@ const ExploreScreen: React.FC = () => {
           <View>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Exploring about your living style?</Text>
           </View>
-          
+
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {topRatedProperties.map(property => renderPropertyCard1(property))}
+          {topRatedProperties.map(property => (
+            <TouchableOpacity
+              key={property.id}
+              style={[styles.propertyCard1, { backgroundColor: colors.card }]}
+              onPress={() => {}}
+              activeOpacity={0.9}
+            >
+              <Image source={{ uri: property.image }} style={styles.propertyImage} />
+              <View style={styles.propertyInfo}>
+                <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
+                  {property.title}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
       </Animated.View>
     </ScrollView>
@@ -231,6 +365,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
+  },
+  mapSection: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabContainer: {
     flexDirection: 'row',
@@ -382,6 +525,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#0F6980',
     fontWeight: '500',
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+  },
+  emptyMapContainer: {
+    height: 250,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
 });
 

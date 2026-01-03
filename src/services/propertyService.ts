@@ -19,6 +19,29 @@ export const propertyService = {
     });
   },
 
+  async getPropertiesWithFilters(params?: {
+    page?: number;
+    limit?: number;
+    city?: string;
+    state?: string;
+    country?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    propertyTypeId?: string;
+    furnished?: boolean;
+    search?: string;
+    sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'rating';
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+  }): Promise<{ properties: Property[]; total: number; page: number; limit: number }> {
+    return apiService.get<{ properties: Property[]; total: number; page: number; limit: number }>('/properties', {
+      params,
+    });
+  },
+
   async getPropertyById(id: string): Promise<Property> {
     return apiService.get<Property>(`/properties/${id}`);
   },
