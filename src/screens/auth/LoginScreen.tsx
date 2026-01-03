@@ -14,7 +14,9 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../types';
-import { CommonActions } from '@react-navigation/native';
+import { useAuth } from '../../context/AuthContext';
+import { googleOAuthService } from '../../services';
+import { ENV } from '../../config/env';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -66,15 +68,32 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  const handleGoogleSignIn = () => {
-    Alert.alert('Coming Soon', 'Google sign-in will be available soon');
+  const handleGoogleSignIn = async () => {
+    if (!ENV.ENABLE_OAUTH || !ENV.GOOGLE_WEB_CLIENT_ID) {
+      Alert.alert('Not Available', 'Google Sign-In is not configured');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const authResponse = await googleOAuthService.signIn();
+      await login({ email: authResponse.user.email, password: '' }, authResponse);
+      Alert.alert('Success', 'Signed in with Google successfully!');
+    } catch (error: any) {
+      Alert.alert(
+        'Google Sign-In Failed',
+        error.message || 'Failed to sign in with Google'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -87,7 +106,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         {/* Welcome Section */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.welcomeSection,
             {
@@ -103,7 +122,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         </Animated.View>
 
         {/* Form Section */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.formSection,
             {
@@ -112,19 +131,19 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             }
           ]}
         >
-          
+
           {/* Username/Email Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Username</Text>
             <View style={[
-              styles.inputWrapper, 
+              styles.inputWrapper,
               emailFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
             ]}>
-              <Icon 
-                name="person-outline" 
-                size={20} 
-                color={emailFocused ? "#6366F1" : "#94A3B8"} 
-                style={styles.inputIcon} 
+              <Icon
+                name="person-outline"
+                size={20}
+                color={emailFocused ? "#6366F1" : "#94A3B8"}
+                style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
@@ -144,14 +163,14 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Password</Text>
             <View style={[
-              styles.inputWrapper, 
+              styles.inputWrapper,
               passwordFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
             ]}>
-              <Icon 
-                name="lock-closed-outline" 
-                size={20} 
-                color={passwordFocused ? "#6366F1" : "#94A3B8"} 
-                style={styles.inputIcon} 
+              <Icon
+                name="lock-closed-outline"
+                size={20}
+                color={passwordFocused ? "#6366F1" : "#94A3B8"}
+                style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
@@ -164,13 +183,13 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeButton}
               >
-                <Icon 
+                <Icon
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20} 
+                  size={20}
                   color={passwordFocused ? "#6366F1" : "#94A3B8"}
                 />
               </TouchableOpacity>
@@ -178,16 +197,16 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {/* Login Button */}
-          <TouchableOpacity 
-            style={styles.loginButton} 
+          <TouchableOpacity
+            style={styles.loginButton}
             onPress={handleLogin}
           >
             <Text style={styles.loginButtonText}>Log in</Text>
           </TouchableOpacity>
 
           {/* Forgot Password */}
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('ForgotPassword')} 
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ForgotPassword')}
             style={styles.forgotPasswordContainer}
           >
             <Text style={styles.forgotPassword}>Forgot password?</Text>
@@ -228,7 +247,7 @@ const styles = StyleSheet.create({
   backButton: { width: 40, height: 40, justifyContent: 'center' },
   welcomeSection: { paddingHorizontal: 24, marginBottom: 32 },
   heading: { fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 8 },
-  subheading: { fontSize: 15, lineHeight: 22, color: '#64748B', marginBottom:15},
+  subheading: { fontSize: 15, lineHeight: 22, color: '#64748B', marginBottom: 15 },
   formSection: { paddingHorizontal: 24 },
   inputGroup: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', color: '#1E293B', marginBottom: 8 },
@@ -258,7 +277,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
-    marginTop:12,
+    marginTop: 12,
   },
   loginButtonDisabled: {
     backgroundColor: '#9CA3AF',

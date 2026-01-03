@@ -15,6 +15,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { googleOAuthService } from '../../services';
+import { ENV } from '../../config/env';
 
 type RegisterScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -91,15 +93,37 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    Alert.alert('Coming Soon', 'Google sign-in will be available soon');
+  const handleGoogleSignIn = async () => {
+    if (!ENV.ENABLE_OAUTH || !ENV.GOOGLE_WEB_CLIENT_ID) {
+      Alert.alert('Not Available', 'Google Sign-In is not configured');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const authResponse = await googleOAuthService.signIn();
+      await register({
+        name: authResponse.user.name,
+        email: authResponse.user.email,
+        password: '', // Not needed for OAuth
+        phone: authResponse.user.phone,
+      }, authResponse);
+      Alert.alert('Success', 'Signed up with Google successfully!');
+    } catch (error: any) {
+      Alert.alert(
+        'Google Sign-Up Failed',
+        error.message || 'Failed to sign up with Google'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -141,7 +165,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Full Name</Text>
             <View style={[
-              styles.inputWrapper, 
+              styles.inputWrapper,
               nameFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
             ]}>
               <Icon name="person-outline" size={20} color={nameFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
@@ -161,7 +185,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Username / Email</Text>
             <View style={[
-              styles.inputWrapper, 
+              styles.inputWrapper,
               emailFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
             ]}>
               <Icon name="mail-outline" size={20} color={emailFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
@@ -183,7 +207,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Password</Text>
             <View style={[
-              styles.inputWrapper, 
+              styles.inputWrapper,
               passwordFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
             ]}>
               <Icon name="lock-closed-outline" size={20} color={passwordFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
@@ -198,13 +222,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeButton}
               >
-                <Icon 
+                <Icon
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20} 
+                  size={20}
                   color={passwordFocused ? "#6366F1" : "#94A3B8"}
                 />
               </TouchableOpacity>
@@ -215,7 +239,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Phone number</Text>
             <View style={[
-              styles.inputWrapper, 
+              styles.inputWrapper,
               phoneFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
             ]}>
               <TouchableOpacity style={styles.countryCodeButton}>
@@ -235,8 +259,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
 
-          <TouchableOpacity 
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
             onPress={handleRegister}
             disabled={isLoading}
           >
@@ -279,7 +303,7 @@ const styles = StyleSheet.create({
   backButton: { width: 40, height: 40, justifyContent: 'center' },
   welcomeSection: { paddingHorizontal: 24, marginBottom: 20 },
   heading: { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 8 },
-  subheading: { fontSize: 15, lineHeight: 22, color: '#64748B', marginBottom:15 },
+  subheading: { fontSize: 15, lineHeight: 22, color: '#64748B', marginBottom: 15 },
   formSection: { paddingHorizontal: 24 },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 14, fontWeight: '600', color: '#1E293B', marginBottom: 8 },
@@ -311,7 +335,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
-    marginTop:20,
+    marginTop: 20,
   },
   loginButtonDisabled: {
     backgroundColor: '#9CA3AF',
