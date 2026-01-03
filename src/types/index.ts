@@ -121,6 +121,7 @@ export type RootStackParamList = {
   Main: undefined;
 };
 
+
 export type AuthStackParamList = {
   Onboarding: undefined;
   Login: undefined;
@@ -129,9 +130,9 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-  Home: undefined;
-  Favorites: undefined;
-  Bookings: undefined;
+  Explore: undefined;
+  HomeScreen: undefined;
+  Saved: undefined;
   Profile: undefined;
 };
 

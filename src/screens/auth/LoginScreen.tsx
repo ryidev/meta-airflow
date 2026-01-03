@@ -13,7 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../types';
-import { useAuth } from '../../context/AuthContext';
+import { CommonActions } from '@react-navigation/native';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -22,32 +22,20 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await login({ email, password });
-      // Navigation handled by AuthContext
-    } catch (error: any) {
-      Alert.alert(
-        'Login Failed',
-        error.response?.data?.message || 'Invalid email or password'
-      );
-    } finally {
-      setIsLoading(false);
-    }
+  const handleLogin = () => {
+    // Langsung navigate ke Main screen tanpa auth
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      })
+    );
   };
 
   const handleGoogleSignIn = () => {
@@ -147,13 +135,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
           {/* Login Button */}
           <TouchableOpacity 
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+            style={styles.loginButton} 
             onPress={handleLogin}
-            disabled={isLoading}
           >
-            <Text style={styles.loginButtonText}>
-              {isLoading ? 'Logging in...' : 'Log in'}
-            </Text>
+            <Text style={styles.loginButtonText}>Log in</Text>
           </TouchableOpacity>
 
           {/* Forgot Password */}

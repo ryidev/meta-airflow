@@ -1,243 +1,421 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
-  RefreshControl,
-  Alert,
+  TextInput,
+  Image,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { CompositeNavigationProp } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { HomeStackParamList, MainTabParamList } from '../../types';
-import { Property } from '../../types';
-import { propertyService } from '../../services/propertyService';
-import { Colors } from '../../constants';
-import PropertyCard from '../../components/PropertyCard';
-import Loading from '../../components/Loading';
-import Button from '../../components/Button';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-type HomeScreenNavigationProp = CompositeNavigationProp<
-  StackNavigationProp<HomeStackParamList, 'HomeScreen'>,
-  BottomTabNavigationProp<MainTabParamList>
->;
-
-interface Props {
-  navigation: HomeScreenNavigationProp;
-}
-
-const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+const HomeScreen: React.FC = () => {
+  const [selectedTab, setSelectedTab] = useState<'rent' | 'buy'>('rent');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadProperties();
-  }, []);
+  // Dummy data
+  const nearProperties = [
+    {
+      id: '1',
+      image: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400',
+      rating: 4.8,
+      reviews: 73,
+      title: 'Entire Bromo mountain view Cabin in Suraya',
+      location: 'Malang, Probolinggo',
+      rooms: 2,
+      area: 673,
+      price: 526,
+    },
+    {
+      id: '2',
+      image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
+      rating: 4.9,
+      reviews: 104,
+      title: 'Modern Beach House',
+      location: 'Surabaya, Beach Road',
+      rooms: 3,
+      area: 850,
+      price: 750,
+    },
+  ];
 
-  const loadProperties = async () => {
-    try {
-      const [allProps, favs] = await Promise.all([
-        propertyService.getProperties({ featured: false }),
-        propertyService.getFavorites(),
-      ]);
+  const topRatedProperties = [
+    {
+      id: '3',
+      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400',
+      rating: 4.9,
+      reviews: 104,
+      title: 'Entire private villa in Surabaya City',
+      location: 'Harapan Raya, Surabaya',
+      rooms: 2,
+      area: 488,
+      price: 400,
+    },
+    {
+      id: '4',
+      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400',
+      rating: 4.7,
+      reviews: 89,
+      title: 'Luxury Apartment',
+      location: 'Central Surabaya',
+      rooms: 4,
+      area: 920,
+      price: 850,
+    },
+  ];
 
-      const featuredProps = await propertyService.getProperties({ featured: true });
-
-      setProperties(allProps.properties);
-      setFeaturedProperties(featuredProps.properties);
-      setFavorites(new Set(favs.map(f => f.propertyId)));
-    } catch (error) {
-      console.error('Error loading properties:', error);
-      Alert.alert('Error', 'Failed to load properties');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadProperties();
-    setRefreshing(false);
-  }, []);
-
-  const handlePropertyPress = (propertyId: string) => {
-    navigation.navigate('PropertyDetail', { propertyId });
-  };
-
-  const handleFavoritePress = async (propertyId: string) => {
-    try {
-      const isFav = favorites.has(propertyId);
-      if (isFav) {
-        const favorite = await propertyService.getFavorites();
-        const fav = favorite.find(f => f.propertyId === propertyId);
-        if (fav) {
-          await propertyService.removeFromFavorites(fav.id);
-          setFavorites(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(propertyId);
-            return newSet;
-          });
-        }
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
       } else {
-        await propertyService.addToFavorites(propertyId);
-        setFavorites(prev => new Set(prev).add(propertyId));
+        newSet.add(id);
       }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-    }
+      return newSet;
+    });
   };
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View>
-        <Text style={styles.greeting}>Find Your</Text>
-        <Text style={styles.title}>Dream Property</Text>
-      </View>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('CreateProperty')}
+  const renderPropertyCard = (property: any) => (
+    <View key={property.id} style={styles.propertyCard}>
+      <Image source={{ uri: property.image }} style={styles.propertyImage} />
+      <TouchableOpacity 
+        style={styles.favoriteButton}
+        onPress={() => toggleFavorite(property.id)}
       >
-        <Icon name="plus" size={24} color={Colors.white} />
+        <Icon 
+          name={favorites.has(property.id) ? "heart" : "heart-outline"} 
+          size={24} 
+          color={favorites.has(property.id) ? "#FF385C" : "#FFFFFF"} 
+        />
       </TouchableOpacity>
+      <View style={styles.propertyInfo}>
+        <View style={styles.ratingRow}>
+          <Icon name="star" size={16} color="#FFB800" />
+          <Text style={styles.ratingText}>{property.rating}</Text>
+          <Text style={styles.reviewsText}>({property.reviews})</Text>
+        </View>
+        <Text style={styles.propertyTitle} numberOfLines={2}>
+          {property.title}
+        </Text>
+        <Text style={styles.locationSubtext}>{property.location}</Text>
+        <View style={styles.detailsRow}>
+          <View style={styles.detailItem}>
+            <Icon name="bed-outline" size={16} color="#64748B" />
+            <Text style={styles.detailText}>{property.rooms} room</Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Icon name="resize-outline" size={16} color="#64748B" />
+            <Text style={styles.detailText}>{property.area} m²</Text>
+          </View>
+        </View>
+        <Text style={styles.priceText}>
+          ${property.price}
+          <Text style={styles.priceUnit}> /month</Text>
+        </Text>
+      </View>
     </View>
   );
 
-  const renderFeaturedSection = () => {
-    if (featuredProperties.length === 0) return null;
-
-    return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Featured Properties</Text>
-        <FlatList
-          horizontal
-          data={featuredProperties}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.featuredCard}>
-              <PropertyCard
-                property={item}
-                onPress={() => handlePropertyPress(item.id)}
-                onFavoritePress={() => handleFavoritePress(item.id)}
-                isFavorite={favorites.has(item.id)}
-              />
-            </View>
-          )}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.featuredList}
-        />
-      </View>
-    );
-  };
-
-  if (isLoading) {
-    return <Loading message="Loading properties..." />;
-  }
-
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={properties}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <PropertyCard
-            property={item}
-            onPress={() => handlePropertyPress(item.id)}
-            onFavoritePress={() => handleFavoritePress(item.id)}
-            isFavorite={favorites.has(item.id)}
-          />
-        )}
-        ListHeaderComponent={
-          <>
-            {renderHeader()}
-            {renderFeaturedSection()}
-            <Text style={styles.sectionTitle}>All Properties</Text>
-          </>
-        }
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="home-search" size={80} color={Colors.textLight} />
-            <Text style={styles.emptyText}>No properties found</Text>
-            <Button
-              title="Add Property"
-              onPress={() => navigation.navigate('CreateProperty')}
-              style={styles.emptyButton}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <View style={styles.topBar}>
+          <View style={styles.locationContainer}>
+            <Text style={styles.findText}>Find your place in</Text>
+            <View style={styles.locationRow}>
+              <Icon name="location" size={20} color="#0F6980" />
+              <Text style={styles.locationText}>Surabaya, Indonesia</Text>
+              <Icon name="chevron-down" size={20} color="#000" />
+            </View>
+          </View>
+          <View style={styles.avatarContainer}>
+            <Image 
+              source={{ uri: 'https://i.pravatar.cc/150?img=12' }} 
+              style={styles.avatar} 
             />
           </View>
-        }
-      />
-    </View>
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color="#94A3B8" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search address, city, location"
+            placeholderTextColor="#94A3B8"
+          />
+          <TouchableOpacity style={styles.filterButton}>
+            <Icon name="options-outline" size={20} color="#000" />
+          </TouchableOpacity>
+        </View>
+
+      </View>
+
+      {/* Near your location */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Near your location</Text>
+            <Text style={styles.sectionSubtitle}>243 properties in Surabaya</Text>
+          </View>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          {nearProperties.map(property => renderPropertyCard(property))}
+        </ScrollView>
+      </View>
+
+      {/* Top rated in Surabaya */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Top rated in Surabaya</Text>
+          </View>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          {topRatedProperties.map(property => renderPropertyCard(property))}
+        </ScrollView>
+      </View>
+
+      {/* Your favorites */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>your favorites</Text>
+          </View>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          {nearProperties.filter(p => favorites.has(p.id)).map(property => renderPropertyCard(property))}
+          {nearProperties.filter(p => favorites.has(p.id)).length === 0 && (
+            <Text style={styles.emptyFavText}>No favorites yet</Text>
+          )}
+        </ScrollView>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#FFFFFF',
   },
-  listContent: {
+  headerSection: {
     padding: 16,
+    paddingTop: 50,
   },
-  header: {
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    marginTop: 20,
+
+  },
+  locationContainer: {
+    flex: 1,
+  },
+  findText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  locationRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    gap: 4,
   },
-  greeting: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+  locationText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  addButton: {
+  avatarContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  searchContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 52,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#000',
+  },
+  filterButton: {
+    padding: 4,
+  },
+  questionText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 12,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  tab: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    backgroundColor: '#F1F5F9',
+  },
+  tabActive: {
+    backgroundColor: '#0F6980',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
   },
   section: {
-    marginBottom: 24,
+    marginTop: 24,
+    paddingLeft: 16,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.text,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 16,
-  },
-  featuredList: {
     paddingRight: 16,
   },
-  featuredCard: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  seeAllText: {
+    fontSize: 15,
+    color: '#6366F1',
+    fontWeight: '500',
+  },
+  horizontalScroll: {
+    paddingBottom: 8,
+  },
+  propertyCard: {
+    width: 280,
     marginRight: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  emptyContainer: {
-    alignItems: 'center',
+  propertyImage: {
+    width: '100%',
+    height: 180,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    backgroundColor: '#F1F5F9',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
-    paddingVertical: 60,
+    alignItems: 'center',
   },
-  emptyText: {
+  propertyInfo: {
+    padding: 12,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  ratingText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginLeft: 4,
+  },
+  reviewsText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginLeft: 2,
+  },
+  propertyTitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
-    marginTop: 16,
-    marginBottom: 24,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+    lineHeight: 22,
   },
-  emptyButton: {
-    paddingHorizontal: 32,
+  locationSubtext: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 12,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  priceText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
+  },
+  priceUnit: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#64748B',
+  },
+  emptyFavText: {
+    fontSize: 15,
+    color: '#94A3B8',
+    fontStyle: 'italic',
+    paddingVertical: 20,
   },
 });
 
