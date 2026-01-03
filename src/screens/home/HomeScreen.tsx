@@ -10,8 +10,10 @@ import {
   Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
 const HomeScreen: React.FC = () => {
+  const navigation = useNavigation();
   const [selectedTab, setSelectedTab] = useState<'rent' | 'buy'>('rent');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
@@ -127,12 +129,24 @@ const HomeScreen: React.FC = () => {
     });
   };
 
+  // Gabungkan semua properties untuk favorites
+  const allProperties = [...nearProperties, ...topRatedProperties];
+
   const renderPropertyCard = (property: any) => (
-    <View key={property.id} style={styles.propertyCard}>
+    <TouchableOpacity 
+      key={property.id} 
+      style={styles.propertyCard}
+      onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
+      activeOpacity={0.9}
+    >
       <Image source={{ uri: property.image }} style={styles.propertyImage} />
       <TouchableOpacity 
         style={styles.favoriteButton}
-        onPress={() => toggleFavorite(property.id)}
+        activeOpacity={0.7}
+        onPress={(e) => {
+          e.stopPropagation();
+          toggleFavorite(property.id);
+        }}
       >
         <Icon 
           name={favorites.has(property.id) ? "heart" : "heart-outline"} 
@@ -165,7 +179,7 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.priceUnit}> /month</Text>
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -285,12 +299,17 @@ const HomeScreen: React.FC = () => {
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {nearProperties.filter(p => favorites.has(p.id)).map(property => renderPropertyCard(property))}
-          {nearProperties.filter(p => favorites.has(p.id)).length === 0 && (
+        {allProperties.filter(p => favorites.has(p.id)).length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            {allProperties.filter(p => favorites.has(p.id)).map(property => renderPropertyCard(property))}
+          </ScrollView>
+        ) : (
+          <View style={styles.emptyFavContainer}>
+            <Icon name="heart-outline" size={48} color="#CBD5E1" />
             <Text style={styles.emptyFavText}>No favorites yet</Text>
-          )}
-        </ScrollView>
+            <Text style={styles.emptyFavSubtext}>Tap the heart icon to save properties</Text>
+          </View>
+        )}
       </Animated.View>
     </ScrollView>
   );
@@ -501,11 +520,22 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#64748B',
   },
+  emptyFavContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
   emptyFavText: {
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 12,
+  },
+  emptyFavSubtext: {
+    fontSize: 14,
     color: '#94A3B8',
-    fontStyle: 'italic',
-    paddingVertical: 20,
+    marginTop: 4,
   },
 });
 

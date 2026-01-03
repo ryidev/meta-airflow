@@ -10,8 +10,10 @@ import {
   Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
 const ExploreScreen: React.FC = () => {
+  const navigation = useNavigation();
   const [selectedTab, setSelectedTab] = useState<'rent' | 'buy'>('rent');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
@@ -46,7 +48,7 @@ const ExploreScreen: React.FC = () => {
     {
       id: '1',
       image: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400',
-      title: 'Entire Bromo mountain view Cabin in Suraya',
+      title: 'Cabin in Suraya',
       rented: 526,
     },
     {
@@ -82,20 +84,32 @@ const ExploreScreen: React.FC = () => {
   ];
 
   const renderPropertyCard = (property: any) => (
-    <View key={property.id} style={styles.propertyCard}>
+    <TouchableOpacity 
+      key={property.id} 
+      style={styles.propertyCard}
+      onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
+      activeOpacity={0.9}
+    >
       <Image source={{ uri: property.image }} style={styles.propertyImage} />
       <View style={styles.propertyInfo}>
         
         <Text style={styles.propertyTitle} numberOfLines={2}>
           {property.title}
         </Text>
-        <Text style={styles.locationSubtext}>Rented props {property.rented}</Text>
- 
+        <View style={styles.rentedRow}>
+          <Icon name="people-outline" size={14} color="#0F6980" />
+          <Text style={styles.rentedText}>{property.rented} people rented</Text>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
   const renderPropertyCard1 = (property: any) => (
-    <View key={property.id} style={styles.propertyCard1}>
+    <TouchableOpacity 
+      key={property.id} 
+      style={styles.propertyCard1}
+      onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
+      activeOpacity={0.9}
+    >
       <Image source={{ uri: property.image }} style={styles.propertyImage} />
       <View style={styles.propertyInfo}>
         
@@ -104,7 +118,7 @@ const ExploreScreen: React.FC = () => {
         </Text>
  
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -142,7 +156,7 @@ const ExploreScreen: React.FC = () => {
           <View>
             <Text style={styles.sectionTitle}>Find your next trip!</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('ExploreDetail' as never)}>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -330,7 +344,7 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   propertyTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#000',
     marginBottom: 4,
@@ -371,6 +385,16 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontStyle: 'italic',
     paddingVertical: 20,
+  },
+  rentedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  rentedText: {
+    fontSize: 12,
+    color: '#0F6980',
+    fontWeight: '500',
   },
 });
 

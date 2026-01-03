@@ -2,10 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { MainTabParamList } from '../types';
-import ExploreScreen from '../screens/home/ExploreScreen';
+import ExploreNavigator from './ExploreNavigator';
+import HomeStackNavigator from './HomeStackNavigator';
 import SavedScreen from '../screens/home/SavedScreen';
 import ProfileTabScreen from '../screens/home/ProfileTabScreen';
-import HomeScreen from '../screens/home/HomeScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -58,14 +58,14 @@ const MainNavigator: React.FC = () => {
     >
       <Tab.Screen
         name="HomeScreen"
-        component={HomeScreen}
+        component={HomeStackNavigator}
         options={{
           tabBarLabel: 'Home',
         }}
       />
       <Tab.Screen
         name="Explore"
-        component={ExploreScreen}
+        component={ExploreNavigator}
         options={{
           tabBarLabel: 'Explore',
         }}

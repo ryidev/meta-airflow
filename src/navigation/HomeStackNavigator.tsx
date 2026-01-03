@@ -1,16 +1,17 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { HomeStackParamList } from '../types';
-import { Colors } from '../constants';
 import HomeScreen from '../screens/home/HomeScreen';
-import PropertyDetailScreen from '../screens/property/PropertyDetailScreen';
 import PropertyDetailFullScreen from '../screens/property/PropertyDetailFullScreen';
-import CreatePropertyScreen from '../screens/property/CreatePropertyScreen';
-import EditPropertyScreen from '../screens/property/EditPropertyScreen';
+import { Colors } from '../constants';
+
+export type HomeStackParamList = {
+  HomeMain: undefined;
+  PropertyDetailFull: { property: any };
+};
 
 const Stack = createStackNavigator<HomeStackParamList>();
 
-const HomeNavigator: React.FC = () => {
+const HomeStackNavigator: React.FC = () => {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -28,32 +29,17 @@ const HomeNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen
-        name="HomeScreen"
+        name="HomeMain"
         component={HomeScreen}
         options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="PropertyDetail"
-        component={PropertyDetailScreen}
-        options={{ title: 'Property Details' }}
       />
       <Stack.Screen
         name="PropertyDetailFull"
         component={PropertyDetailFullScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen
-        name="CreateProperty"
-        component={CreatePropertyScreen}
-        options={{ title: 'Add Property' }}
-      />
-      <Stack.Screen
-        name="EditProperty"
-        component={EditPropertyScreen}
-        options={{ title: 'Edit Property' }}
-      />
     </Stack.Navigator>
   );
 };
 
-export default HomeNavigator;
+export default HomeStackNavigator;

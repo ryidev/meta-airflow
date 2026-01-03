@@ -1,0 +1,52 @@
+import React from 'react';
+import { createStackNavigator } from '@react-navigation/stack';
+import ExploreScreen from '../screens/home/ExploreScreen';
+import ExploreDetail from '../screens/home/ExploreDetail';
+import PropertyDetailFullScreen from '../screens/property/PropertyDetailFullScreen';
+import { Colors } from '../constants';
+
+export type ExploreStackParamList = {
+  ExploreScreen: undefined;
+  ExploreDetail: undefined;
+  PropertyDetailFull: { property: any };
+};
+
+const Stack = createStackNavigator<ExploreStackParamList>();
+
+const ExploreNavigator: React.FC = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: Colors.white,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: Colors.border,
+        },
+        headerTintColor: Colors.text,
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+      }}
+    >
+      <Stack.Screen
+        name="ExploreScreen"
+        component={ExploreScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ExploreDetail"
+        component={ExploreDetail}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="PropertyDetailFull"
+        component={PropertyDetailFullScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+export default ExploreNavigator;
