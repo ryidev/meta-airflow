@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Property } from '../../types';
 import { propertyService } from '../../services/propertyService';
 
@@ -26,6 +27,7 @@ type ExploreDetailRouteParams = {
 const ExploreDetail: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<{ params: ExploreDetailRouteParams }, 'params'>>();
+  const insets = useSafeAreaInsets();
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
