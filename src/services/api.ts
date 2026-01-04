@@ -10,11 +10,13 @@ class ApiService {
   constructor() {
     this.api = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 15000,
+      timeout: 60000, // Increased to 60 seconds for file uploads
       headers: {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true', // Bypass ngrok warning page
       },
+      maxContentLength: 100 * 1024 * 1024, // 100MB
+      maxBodyLength: 100 * 1024 * 1024, // 100MB
     });
 
     // Request interceptor to add auth token
@@ -24,6 +26,12 @@ class ApiService {
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Remove Content-Type header for FormData - let axios set it automatically with boundary
+        if (config.data instanceof FormData) {
+          delete config.headers['Content-Type'];
+        }
+
         return config;
       },
       (error) => {

@@ -54,13 +54,16 @@ const UserPropertiesList: React.FC<UserPropertiesListProps> = ({
         </View>
       )}
 
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={onAddPress}
-        activeOpacity={0.8}
-      >
-        <Icon name="add" size={30} color="#FFF" />
-      </TouchableOpacity>
+      {/* Add bottom padding for FAB visibility */}
+      <View style={styles.fabContainer}>
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={onAddPress}
+          activeOpacity={0.8}
+        >
+          <Icon name="add" size={30} color="#FFF" />
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 };
@@ -112,10 +115,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 14,
   },
+  fabContainer: {
+    alignItems: 'flex-end',
+    paddingRight: 20,
+    paddingTop: 30,
+    paddingBottom: 100,
+  },
   fab: {
-    position: 'absolute',
-    bottom: -100, // Matched the user's latest edit
-    right: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -126,7 +132,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 6,
-    zIndex: 100,
   },
 });
 

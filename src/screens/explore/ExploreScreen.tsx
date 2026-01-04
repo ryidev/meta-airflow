@@ -16,7 +16,7 @@ import Geolocation from '@react-native-community/geolocation';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
-import MapViewComponent from '../../components/MapView';
+import MapTilerView from '../../components/MapTilerView';
 import FilterModal, { FilterValues } from '../../components/FilterModal';
 import { propertyService } from '../../services/propertyService';
 import { Property } from '../../types';
@@ -260,13 +260,11 @@ const ExploreScreen: React.FC = () => {
         ]}
       >
         {mapProperties && mapProperties.length > 0 ? (
-          <MapViewComponent
-            properties={mapProperties}
+          <MapTilerView
+            latitude={userLocation?.latitude || 3.1390}
+            longitude={userLocation?.longitude || 101.6869}
             height={250}
-            onMarkerPress={(property) => {
-              console.log('Property clicked:', property);
-              (navigation as any).navigate('PropertyDetailFull', { propertyId: property.id });
-            }}
+            showLocationPicker={false}
           />
         ) : (
           <View style={[styles.emptyMapContainer, { backgroundColor: colors.surface }]}>

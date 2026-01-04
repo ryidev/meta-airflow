@@ -15,8 +15,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { nearProperties, topRatedProperties, userProperties, allProperties } from './mockData';
 import PropertyCard from './components/PropertyCard';
-import AddPropertyForm from './components/AddPropertyForm';
 import UserPropertiesList from './components/UserPropertiesList';
+import CreatePropertyForm from '../../components/CreatePropertyForm';
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -87,13 +87,6 @@ const HomeScreen: React.FC = () => {
     });
   };
 
-  const handleAddPropertySubmit = (data: any) => {
-    // Logic to handle new property submission
-    console.log('New Property Data:', data);
-    Alert.alert('Success', 'Property submitted successfully!');
-    setListingMode('list');
-  };
-
   const sectionStyle = (animValue: Animated.Value) => ({
     marginTop: 24,
     paddingLeft: 16,
@@ -102,7 +95,11 @@ const HomeScreen: React.FC = () => {
   });
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header Section */}
       <View style={styles.headerSection}>
         <Animated.View
@@ -302,10 +299,10 @@ const HomeScreen: React.FC = () => {
             containerStyle={{ opacity: fadeAnim, transform: [{ translateY: slideSection1Anim }] }}
           />
         ) : (
-          <AddPropertyForm
+          <CreatePropertyForm
             onBack={() => setListingMode('list')}
-            onSubmit={handleAddPropertySubmit}
-            containerStyle={{ opacity: fadeAnim, transform: [{ translateY: slideSection1Anim }] }}
+            onSuccess={() => setListingMode('list')}
+            showHeader={true}
           />
         )
       )}
@@ -316,6 +313,9 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   headerSection: {
     padding: 16,
