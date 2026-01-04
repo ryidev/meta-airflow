@@ -5,19 +5,21 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProfileTabScreen from '../screens/profile/ProfileTabScreen';
 import PersonalScreen from '../screens/profile/PersonalProf';
 import SettingProfScreen from '../screens/profile/SettingProf';
+import BookingHistoryScreen from '../screens/profile/BookingHistoryScreen';
 import { useTheme } from '../context/ThemeContext';
 
 export type ProfileStackParamList = {
   ProfileTab: undefined;
   Personal: undefined;
   Settings: undefined;
+  BookingHistory: undefined;
 };
 
 const Stack = createStackNavigator<ProfileStackParamList>();
 
 const ProfileNavigator: React.FC = () => {
   const { colors } = useTheme();
-  
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -71,6 +73,13 @@ const ProfileNavigator: React.FC = () => {
             </TouchableOpacity>
           ),
         })}
+      />
+      <Stack.Screen
+        name="BookingHistory"
+        component={BookingHistoryScreen}
+        options={{
+          headerShown: false,
+        }}
       />
     </Stack.Navigator>
   );

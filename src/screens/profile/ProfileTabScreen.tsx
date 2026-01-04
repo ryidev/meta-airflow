@@ -1,15 +1,66 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 const ProfileTabScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const { logout } = useAuth();
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+            } catch (error) {
+              console.error('Logout failed:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const menuItems = [
     { id: 1, icon: 'person-outline', title: 'Personal details', screen: 'Personal' },
+    { id: 5, icon: 'calendar-outline', title: 'My Bookings', screen: 'BookingHistory' }, // New Item
     { id: 2, icon: 'settings-outline', title: 'Settings', screen: 'Settings' },
     { id: 3, icon: 'card-outline', title: 'Payment details', screen: null },
     { id: 4, icon: 'help-circle-outline', title: 'FAQ', screen: null },
@@ -19,36 +70,55 @@ const ProfileTabScreen: React.FC = () => {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* Profile Header */}
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Image 
-            source={{ uri: 'https://assets.pikiran-rakyat.com/crop/0x0:0x0/720x0/webp/photo/2025/09/26/1043297320.jpg' }} 
+        <Animated.View style={[styles.avatarContainer, { transform: [{ scale: scaleAnim }], opacity: fadeAnim }]}>
+          <Image
+            source={{ uri: 'https://assets.pikiran-rakyat.com/crop/0x0:0x0/720x0/webp/photo/2025/09/26/1043297320.jpg' }}
             style={styles.avatar}
           />
-        </View>
-        <Text style={[styles.name, { color: colors.text }]}>Asus Turun Gunung</Text>
-        <Text style={[styles.email, { color: colors.textSecondary }]}>asusturungunung@gmail.com</Text>
+        </Animated.View>
+        <Animated.Text style={[styles.name, { color: colors.text, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          Asus Turun Gunung
+        </Animated.Text>
+        <Animated.Text style={[styles.email, { color: colors.textSecondary, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          asusturungunung@gmail.com
+        </Animated.Text>
       </View>
 
       <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
       {/* Menu Items */}
       <View style={styles.menuSection}>
-        {menuItems.map((item) => (
-          <TouchableOpacity 
-            key={item.id} 
-            style={styles.menuItem}
-            onPress={() => {
-              if (item.screen) {
-                navigation.navigate(item.screen as never);
-              }
+        {menuItems.map((item, index) => (
+          <Animated.View
+            key={item.id}
+            style={{
+              opacity: fadeAnim,
+              transform: [{
+                translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [50 * (index + 1), 0] // Staggered effect
+                })
+              }]
             }}
           >
-            <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
-              <Icon name={item.icon} size={24} color={colors.text} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>{item.title}</Text>
-            <Icon name="chevron-forward" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                if (item.screen) {
+                  navigation.navigate(item.screen as never);
+                } else {
+                  Alert.alert('Coming Soon', 'This feature is under development');
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
+                <Icon name={item.icon} size={24} color={colors.text} />
+              </View>
+              <Text style={[styles.menuText, { color: colors.text }]}>{item.title}</Text>
+              <Icon name="chevron-forward" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </Animated.View>
         ))}
       </View>
 
@@ -62,6 +132,16 @@ const ProfileTabScreen: React.FC = () => {
           </View>
           <Text style={styles.menuText}>Switch to hosting</Text>
           <Icon name="chevron-forward" size={24} color="#94A3B8" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Logout */}
+      <View style={styles.menuSection}>
+        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
+            <Icon name="log-out-outline" size={24} color={colors.error || '#ff0000'} />
+          </View>
+          <Text style={[styles.menuText, { color: colors.error || '#ff0000' }]}>Logout</Text>
         </TouchableOpacity>
       </View>
 

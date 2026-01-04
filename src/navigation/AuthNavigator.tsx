@@ -6,6 +6,8 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 
+import AdminLoginScreen from '../screens/auth/AdminLoginScreen';
+
 const Stack = createStackNavigator<AuthStackParamList>();
 
 const AuthNavigator: React.FC = () => {
@@ -20,6 +22,7 @@ const AuthNavigator: React.FC = () => {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
     </Stack.Navigator>
   );
 };

@@ -12,34 +12,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
   const { theme, colors } = useTheme();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  // Create custom navigation theme based on current theme
-  const navigationTheme = theme === 'dark'
-    ? {
-        ...DarkTheme,
-        colors: {
-          ...DarkTheme.colors,
-          primary: colors.primary,
-          background: colors.background,
-          card: colors.card,
-          text: colors.text,
-          border: colors.border,
-          notification: colors.primary,
-        },
-      }
-    : {
-        ...DefaultTheme,
-        colors: {
-          ...DefaultTheme.colors,
-          primary: colors.primary,
-          background: colors.background,
-          card: colors.card,
-          text: colors.text,
-          border: colors.border,
-          notification: colors.primary,
-        },
-      };
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   // Show loading screen while checking auth status
   if (isLoading) {
@@ -50,11 +23,42 @@ const RootNavigator: React.FC = () => {
     );
   }
 
+  // Create custom navigation theme based on current theme
+  const navigationTheme = theme === 'dark'
+    ? {
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.card,
+        text: colors.text,
+        border: colors.border,
+        notification: colors.primary,
+      },
+    }
+    : {
+      ...DefaultTheme,
+      colors: {
+        ...DefaultTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.card,
+        text: colors.text,
+        border: colors.border,
+        notification: colors.primary,
+      },
+    };
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
+          user?.role === 'admin' ? (
+            <Stack.Screen name="AdminDashboard" component={require('../screens/admin/AdminDashboardScreen').default} />
+          ) : (
+            <Stack.Screen name="Main" component={MainNavigator} />
+          )
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}

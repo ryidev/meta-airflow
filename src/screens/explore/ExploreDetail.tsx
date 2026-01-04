@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ExploreDetail: React.FC = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   // Animation values
@@ -193,6 +195,7 @@ const ExploreDetail: React.FC = () => {
         style={[
           styles.header,
           {
+            paddingTop: Math.max(insets.top, 16),
             opacity: fadeAnim,
             transform: [{ translateY: slideAnim }],
           },
@@ -229,7 +232,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
