@@ -65,6 +65,7 @@ export const propertyService = {
 
   async getTopRatedProperties(params?: {
     city?: string;
+    country?: string;
     limit?: number;
     minRating?: number;
   }): Promise<{ properties: Property[]; total: number }> {

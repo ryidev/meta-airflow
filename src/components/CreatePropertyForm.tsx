@@ -21,6 +21,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import { apiService } from '../services/api';
 import { storageService } from '../utils/storage';
+import { locationService } from '../services/locationService';
 import MapTilerView from './MapTilerView';
 import ENV from '../config/env';
 
@@ -49,6 +50,11 @@ interface Amenity {
 const CURRENCIES = [
   { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp' },
   { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM' },
+];
+
+const COUNTRIES = [
+  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
+  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
 ];
 
 const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
@@ -91,6 +97,7 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showPropertyTypeModal, setShowPropertyTypeModal] = useState(false);
+  const [showCountryModal, setShowCountryModal] = useState(false);
 
   useEffect(() => {
     fetchPropertyTypes();
@@ -219,13 +226,32 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleMapLocationSelect = (latitude: number, longitude: number) => {
+  const handleMapLocationSelect = async (latitude: number, longitude: number) => {
     setFormData(prev => ({
       ...prev,
       latitude,
       longitude,
-      address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
     }));
+
+    // Get location details from coordinates
+    try {
+      const locationData = await locationService.getLocationFromCoords(latitude, longitude);
+      setFormData(prev => ({
+        ...prev,
+        latitude,
+        longitude,
+        address: locationData.address || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+        city: locationData.city || prev.city,
+        state: locationData.state || prev.state,
+        country: locationData.countryCode || prev.country,
+      }));
+    } catch (error) {
+      console.error('Failed to get location details:', error);
+      setFormData(prev => ({
+        ...prev,
+        address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+      }));
+    }
   };
 
   const handleLatitudeChange = (value: string) => {
@@ -632,19 +658,37 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, isDark && styles.textDark]}>Zip Code *</Text>
-            <TextInput
-              style={[styles.input, isDark && styles.inputDark]}
-              placeholder="e.g. 50450"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              value={formData.zipCode}
-              onChangeText={(value) => handleInputChange('zipCode', value)}
-              keyboardType="numeric"
-            />
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, styles.halfWidth]}>
+              <Text style={[styles.label, isDark && styles.textDark]}>Country *</Text>
+              <TouchableOpacity
+                style={[styles.input, styles.inputWithIcon, isDark && styles.inputDark]}
+                onPress={() => setShowCountryModal(true)}
+              >
+                <Text style={[styles.countryFlag]}>
+                  {COUNTRIES.find(c => c.code === formData.country)?.flag || '🇲🇾'}
+                </Text>
+                <Text style={[styles.inputText, isDark && styles.textDark]}>
+                  {COUNTRIES.find(c => c.code === formData.country)?.name || 'Malaysia'}
+                </Text>
+                <Icon name="chevron-down" size={20} color={isDark ? '#666' : '#999'} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.inputGroup, styles.halfWidth]}>
+              <Text style={[styles.label, isDark && styles.textDark]}>Zip Code *</Text>
+              <TextInput
+                style={[styles.input, isDark && styles.inputDark]}
+                placeholder="e.g. 50450"
+                placeholderTextColor={isDark ? '#666' : '#999'}
+                value={formData.zipCode}
+                onChangeText={(value) => handleInputChange('zipCode', value)}
+                keyboardType="numeric"
+              />
+            </View>
           </View>
 
-          {/* Currency and Price */}
+          {/* Currency and Price - moved after country/zip */}
           <View style={styles.row}>
             <View style={[styles.inputGroup, styles.halfWidth]}>
               <Text style={[styles.label, isDark && styles.textDark]}>Currency *</Text>
@@ -909,9 +953,54 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
             </ScrollView>
           </View>
         </View>
-      </Modal >
+      </Modal>
 
-    </View >
+      {/* Country Modal */}
+      <Modal
+        visible={showCountryModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowCountryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, isDark && styles.textDark]}>Select Country</Text>
+              <TouchableOpacity onPress={() => setShowCountryModal(false)}>
+                <Icon name="close" size={24} color={isDark ? '#fff' : '#000'} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScroll}>
+              {COUNTRIES.map((country) => (
+                <TouchableOpacity
+                  key={country.code}
+                  style={[
+                    styles.modalItem,
+                    isDark && styles.modalItemDark,
+                    formData.country === country.code && styles.modalItemSelected,
+                  ]}
+                  onPress={() => {
+                    handleInputChange('country', country.code);
+                    setShowCountryModal(false);
+                  }}
+                >
+                  <View style={styles.currencyRow}>
+                    <Text style={[styles.countryFlag]}>{country.flag}</Text>
+                    <Text style={[styles.modalItemText, isDark && styles.textDark]}>
+                      {country.name}
+                    </Text>
+                  </View>
+                  {formData.country === country.code && (
+                    <Icon name="checkmark-circle" size={20} color="#0F6980" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+    </View>
   );
 };
 
@@ -1217,6 +1306,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
     width: 40,
+  },
+  countryFlag: {
+    fontSize: 24,
+    marginRight: 8,
   },
 });
 

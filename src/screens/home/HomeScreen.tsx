@@ -45,15 +45,16 @@ const HomeScreen: React.FC = () => {
   const [searchActive, setSearchActive] = useState(false);
 
   // Real data state
-  const [nearbyProperties, setNearbyProperties] = useState<any[]>([]);
   const [topRatedProperties, setTopRatedProperties] = useState<any[]>([]);
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [propertyCount, setPropertyCount] = useState<number>(0);
 
   // Loading states
-  const [loadingNearby, setLoadingNearby] = useState(false);
+  // Loading states
   const [loadingTopRated, setLoadingTopRated] = useState(false);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // User properties state
@@ -97,35 +98,15 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // Fetch nearby properties based on current location or search
-  const fetchNearbyProperties = async () => {
-    try {
-      setLoadingNearby(true);
-      const location = currentLocation || locationService.getDefaultLocation();
-
-      const { properties } = await propertyService.getNearbyProperties({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        radius: 50, // 50km radius
-        limit: 10,
-      });
-      setNearbyProperties(mapPropertiesToCards(properties));
-    } catch (error) {
-      console.error('Failed to fetch nearby properties:', error);
-      Alert.alert('Error', 'Failed to load nearby properties');
-    } finally {
-      setLoadingNearby(false);
-    }
-  };
-
   // Fetch top-rated properties based on location or search
   const fetchTopRatedProperties = async () => {
     try {
       setLoadingTopRated(true);
-      const city = searchActive && searchQuery ? searchQuery : (currentLocation?.city || 'Yogyakarta');
+      const city = searchActive && searchQuery ? searchQuery : (currentLocation?.city || 'George Town');
 
       const { properties } = await propertyService.getTopRatedProperties({
         city,
+        country: selectedCountry,
         limit: 10,
         minRating: 4.0,
       });
@@ -157,7 +138,7 @@ const HomeScreen: React.FC = () => {
   // Fetch property statistics based on location or search
   const fetchPropertyStats = async () => {
     try {
-      const city = searchActive && searchQuery ? searchQuery : (currentLocation?.city || 'Yogyakarta');
+      const city = searchActive && searchQuery ? searchQuery : (currentLocation?.city || 'George Town');
 
       const stats = await propertyService.getPropertyStats({
         city,
@@ -169,10 +150,36 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  // Fetch search results
+  const fetchSearchResults = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setLoadingSearch(true);
+      const response = await propertyService.getPropertiesWithFilters({
+        city: searchQuery,
+        country: selectedCountry,
+        limit: 20,
+        sortBy: 'newest',
+      });
+      const properties = response?.properties || [];
+      setSearchResults(mapPropertiesToCards(properties));
+    } catch (error) {
+      console.error('Failed to fetch search results:', error);
+      setSearchResults([]);
+    } finally {
+      setLoadingSearch(false);
+    }
+  };
+
   // Handle search
   const handleSearch = async () => {
     if (searchQuery.trim()) {
       setSearchActive(true);
+      await fetchSearchResults();
       await fetchAllRentData();
     }
   };
@@ -181,6 +188,7 @@ const HomeScreen: React.FC = () => {
   const clearSearch = async () => {
     setSearchQuery('');
     setSearchActive(false);
+    setSearchResults([]);
     await fetchAllRentData();
   };
 
@@ -202,7 +210,6 @@ const HomeScreen: React.FC = () => {
   // Fetch all data for rent tab
   const fetchAllRentData = async () => {
     await Promise.all([
-      fetchNearbyProperties(),
       fetchTopRatedProperties(),
       fetchFavoriteProperties(),
       fetchPropertyStats(),
@@ -298,7 +305,6 @@ const HomeScreen: React.FC = () => {
           return p;
         });
 
-      setNearbyProperties(prev => updatePropertyFavorite(prev));
       setTopRatedProperties(prev => updatePropertyFavorite(prev));
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
@@ -347,7 +353,7 @@ const HomeScreen: React.FC = () => {
                 <Text style={[styles.locationText, { color: colors.text }]}>
                   {loadingLocation ? 'Getting location...' :
                     searchActive && searchQuery ? searchQuery :
-                      currentLocation?.city || 'Yogyakarta'}, {getCountryName()}
+                      currentLocation?.city || 'George Town'}, {getCountryName()}
                 </Text>
                 <Icon name="chevron-down" size={20} color={colors.text} />
               </TouchableOpacity>
@@ -453,45 +459,54 @@ const HomeScreen: React.FC = () => {
         {
           selectedTab === 'rent' ? (
             <>
-              {/* Near your location */}
-              <Animated.View style={sectionStyle(slideSection1Anim)}>
-                <View style={styles.sectionHeader}>
-                  <View>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Near {searchActive && searchQuery ? searchQuery : (currentLocation?.city || 'Yogyakarta')}</Text>
-                    <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                      {propertyCount} properties in {searchActive && searchQuery ? searchQuery : (currentLocation?.city || 'Yogyakarta')}
-                    </Text>
+              {/* Search Results - Show when search is active */}
+              {searchActive && (
+                <Animated.View style={sectionStyle(slideSection1Anim)}>
+                  <View style={styles.sectionHeader}>
+                    <View>
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                        Search results for "{searchQuery}"
+                      </Text>
+                      <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                        {searchResults.length} {searchResults.length === 1 ? 'property' : 'properties'} found
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={clearSearch}>
+                      <Text style={styles.seeAllText}>Clear</Text>
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity>
-                    <Text style={styles.seeAllText}>See all</Text>
-                  </TouchableOpacity>
-                </View>
-                {loadingNearby ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                  </View>
-                ) : nearbyProperties.length > 0 ? (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-                    {nearbyProperties.map(property => (
-                      <PropertyCard
-                        key={property.id}
-                        property={property}
-                        onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
-                        onToggleFavorite={toggleFavorite}
-                        isFavorite={property.isFavorited || false}
-                      />
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <View style={styles.emptyContainer}>
-                    <Icon name="home-outline" size={48} color={colors.textSecondary} />
-                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No properties nearby</Text>
-                  </View>
-                )}
-              </Animated.View>
+                  {loadingSearch ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="large" color={colors.primary} />
+                    </View>
+                  ) : searchResults.length > 0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+                      {searchResults.map(property => (
+                        <PropertyCard
+                          key={property.id}
+                          property={property}
+                          onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
+                          onToggleFavorite={toggleFavorite}
+                          isFavorite={property.isFavorited || false}
+                        />
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <View style={styles.emptyContainer}>
+                      <Icon name="search-outline" size={48} color={colors.textSecondary} />
+                      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                        No properties found for "{searchQuery}"
+                      </Text>
+                      <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+                        Try searching with a different location
+                      </Text>
+                    </View>
+                  )}
+                </Animated.View>
+              )}
 
               {/* Top rated in [City] */}
-              <Animated.View style={sectionStyle(slideSection2Anim)}>
+              <Animated.View style={sectionStyle(searchActive ? slideSection2Anim : slideSection1Anim)}>
                 <View style={styles.sectionHeader}>
                   <View>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Top rated in {searchActive && searchQuery ? searchQuery : (currentLocation?.city || 'Yogyakarta')}</Text>
@@ -526,7 +541,7 @@ const HomeScreen: React.FC = () => {
               </Animated.View>
 
               {/* Your favorites */}
-              <Animated.View style={sectionStyle(slideSection3Anim)}>
+              <Animated.View style={sectionStyle(searchActive ? slideSection3Anim : slideSection2Anim)}>
                 <View style={styles.sectionHeader}>
                   <View>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Your favorites</Text>
@@ -751,6 +766,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     marginTop: 12,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: 'center',
   },
   questionText: {
     fontSize: 18,

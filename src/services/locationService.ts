@@ -50,15 +50,14 @@ class LocationService {
           async (position) => {
             const { latitude, longitude } = position.coords;
 
-            // Try to get city name from reverse geocoding
-            // For now, we'll use a simple approach - you can integrate Google Geocoding API later
-            const cityName = await this.getCityFromCoords(latitude, longitude);
+            // Get location details from reverse geocoding
+            const locationData = await this.getLocationFromCoords(latitude, longitude);
 
             resolve({
               coords: { latitude, longitude },
-              city: cityName,
-              state: '',
-              country: 'Indonesia',
+              city: locationData.city,
+              state: locationData.state,
+              country: locationData.country,
             });
           },
           (error) => {
@@ -80,6 +79,22 @@ class LocationService {
 
   async getCityFromCoords(latitude: number, longitude: number): Promise<string> {
     try {
+      const locationData = await this.getLocationFromCoords(latitude, longitude);
+      return locationData.city || 'Unknown';
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+      return 'Unknown';
+    }
+  }
+
+  async getLocationFromCoords(latitude: number, longitude: number): Promise<{
+    city: string;
+    state: string;
+    country: string;
+    countryCode: string;
+    address: string;
+  }> {
+    try {
       // Using OpenStreetMap Nominatim for reverse geocoding (free, no API key needed)
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
@@ -93,33 +108,85 @@ class LocationService {
       const data = await response.json();
 
       if (data && data.address) {
-        // Try to get city from various possible fields
-        return (
-          data.address.city ||
-          data.address.town ||
-          data.address.village ||
-          data.address.municipality ||
-          data.address.county ||
-          'Unknown'
-        );
+        // Get major city - prioritize city over smaller localities
+        const city = this.getMajorCity(data.address);
+
+        // Get state/province
+        const state = data.address.state || data.address.province || data.address.region || '';
+
+        // Get country
+        const country = data.address.country || '';
+        const countryCode = data.address.country_code?.toUpperCase() || '';
+
+        // Map country codes to our system
+        let mappedCountryCode = countryCode;
+        if (countryCode === 'MY') {
+          mappedCountryCode = 'MY';
+        } else if (countryCode === 'ID') {
+          mappedCountryCode = 'ID';
+        }
+
+        // Get full address
+        const address = data.display_name || '';
+
+        return {
+          city: this.capitalizeWords(city),
+          state: this.capitalizeWords(state),
+          country: this.capitalizeWords(country),
+          countryCode: mappedCountryCode,
+          address,
+        };
       }
 
-      return 'Unknown';
+      return {
+        city: 'Unknown',
+        state: '',
+        country: '',
+        countryCode: 'MY',
+        address: '',
+      };
     } catch (error) {
       console.error('Error reverse geocoding:', error);
-      return 'Unknown';
+      return {
+        city: 'Unknown',
+        state: '',
+        country: '',
+        countryCode: 'MY',
+        address: '',
+      };
     }
+  }
+
+  private getMajorCity(address: any): string {
+    // Priority order: city > town > municipality > county > village
+    // This ensures we get major cities instead of small localities
+    return (
+      address.city ||
+      address.town ||
+      address.municipality ||
+      address.county ||
+      address.village ||
+      'Unknown'
+    );
+  }
+
+  private capitalizeWords(str: string): string {
+    if (!str) return '';
+    return str
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   getDefaultLocation(): LocationInfo {
     return {
       coords: {
-        latitude: -7.2575,
-        longitude: 112.7521,
+        latitude: 5.4164,
+        longitude: 100.3327,
       },
-      city: 'Yogyakarta',
-      state: 'East Java',
-      country: 'Indonesia',
+      city: 'George Town',
+      state: 'Penang',
+      country: 'Malaysia',
     };
   }
 }
