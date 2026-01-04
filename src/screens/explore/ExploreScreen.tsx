@@ -259,19 +259,22 @@ const ExploreScreen: React.FC = () => {
           }
         ]}
       >
-        {mapProperties && mapProperties.length > 0 ? (
+        <View
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+        >
           <MapTilerView
             latitude={userLocation?.latitude || 3.1390}
             longitude={userLocation?.longitude || 101.6869}
+            properties={mapProperties}
+            onPropertyMarkerClick={(propertyId) => {
+              (navigation as any).navigate('PropertyDetailFull', { propertyId });
+            }}
             height={250}
             showLocationPicker={false}
+            showUserLocation={true}
           />
-        ) : (
-          <View style={[styles.emptyMapContainer, { backgroundColor: colors.surface }]}>
-            <Icon name="map-outline" size={48} color={colors.textSecondary} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No properties to display on map</Text>
-          </View>
-        )}
+        </View>
       </Animated.View>
 
       <Animated.View

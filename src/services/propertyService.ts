@@ -14,9 +14,16 @@ export const propertyService = {
     limit?: number;
     featured?: boolean;
   }): Promise<{ properties: Property[]; total: number }> {
-    return apiService.get<{ properties: Property[]; total: number }>('/properties', {
+    const response = await apiService.get<{
+      success: boolean;
+      data: { properties: Property[]; pagination: { total: number } };
+    }>('/properties', {
       params,
     });
+    return {
+      properties: response.data.properties,
+      total: response.data.pagination.total,
+    };
   },
 
   async getPropertiesWithFilters(params?: {
@@ -37,9 +44,26 @@ export const propertyService = {
     longitude?: number;
     radius?: number;
   }): Promise<{ properties: Property[]; total: number; page: number; limit: number }> {
-    return apiService.get<{ properties: Property[]; total: number; page: number; limit: number }>('/properties', {
+    const response = await apiService.get<{
+      success: boolean;
+      data: {
+        properties: Property[];
+        pagination: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+        };
+      }
+    }>('/properties', {
       params,
     });
+    return {
+      properties: response.data.properties,
+      total: response.data.pagination.total,
+      page: response.data.pagination.page,
+      limit: response.data.pagination.limit,
+    };
   },
 
   async getNearbyProperties(params: {
