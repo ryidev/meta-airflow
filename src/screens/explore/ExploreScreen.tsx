@@ -9,7 +9,10 @@ import {
   Image,
   Animated,
   ActivityIndicator,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
@@ -24,7 +27,10 @@ const ExploreScreen: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'rent' | 'buy'>('rent');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [properties, setProperties] = useState<Property[]>([]);
+  const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingNearby, setLoadingNearby] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<FilterValues>({
@@ -57,6 +63,9 @@ const ExploreScreen: React.FC = () => {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Get user location and fetch nearby properties
+    requestLocationAndFetchNearby();
   }, []);
 
   useEffect(() => {
@@ -65,7 +74,62 @@ const ExploreScreen: React.FC = () => {
     }, 300); // Debounce search
 
     return () => clearTimeout(timeoutId);
-  }, [filters.city, filters.minPrice, filters.maxPrice, filters.bedrooms, filters.bathrooms, filters.sortBy, searchText]);
+  }, [filters.city, filters.minPrice, filters.maxPrice, filters.bedrooms, filters.bathrooms, filters.amenities, filters.sortBy, searchText]);
+
+  const requestLocationAndFetchNearby = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          getUserLocationAndFetch();
+        }
+      } else {
+        getUserLocationAndFetch();
+      }
+    } catch (err) {
+      console.warn('Location permission error:', err);
+    }
+  };
+
+  const getUserLocationAndFetch = () => {
+    Geolocation.getCurrentPosition(
+      (position: any) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ latitude, longitude });
+        fetchNearbyProperties(latitude, longitude);
+      },
+      (error: any) => {
+        console.warn('Error getting location:', error);
+        // Fallback to default location (Kuala Lumpur)
+        fetchNearbyProperties(3.1390, 101.6869);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000,
+      },
+    );
+  };
+
+  const fetchNearbyProperties = async (latitude: number, longitude: number) => {
+    try {
+      setLoadingNearby(true);
+      const response = await propertyService.getNearbyProperties({
+        latitude,
+        longitude,
+        radius: 10, // 10km radius
+        limit: 20,
+      });
+      setNearbyProperties(response.properties || []);
+    } catch (error) {
+      console.error('Failed to fetch nearby properties:', error);
+      setNearbyProperties([]);
+    } finally {
+      setLoadingNearby(false);
+    }
+  };
 
   const fetchProperties = async () => {
     try {
@@ -83,6 +147,7 @@ const ExploreScreen: React.FC = () => {
       if (filters.maxPrice) params.maxPrice = filters.maxPrice;
       if (filters.bedrooms) params.bedrooms = filters.bedrooms;
       if (filters.bathrooms) params.bathrooms = filters.bathrooms;
+      if (filters.amenities && filters.amenities.length > 0) params.amenities = filters.amenities.join(',');
       if (searchText) params.search = searchText;
 
       const response = await propertyService.getPropertiesWithFilters(params);
@@ -253,39 +318,64 @@ const ExploreScreen: React.FC = () => {
       >
         <View style={styles.sectionHeader}>
           <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Find your next trip!</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Nearby Location Properties</Text>
+            {userLocation && (
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                Within 10km radius
+              </Text>
+            )}
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('ExploreDetail' as never)}>
+          <TouchableOpacity onPress={() => navigation.navigate('ExploreDetail' as never, {
+            properties: nearbyProperties,
+            title: 'Nearby Properties',
+            location: userLocation,
+            isNearby: true
+          } as never)}>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {properties && properties.length > 0 ? (
-            properties.slice(0, 10).map(property => (
-              <TouchableOpacity
-                key={property.id}
-                style={[styles.propertyCard, { backgroundColor: colors.card }]}
-                onPress={() => (navigation as any).navigate('PropertyDetailFull', { propertyId: property.id })}
-                activeOpacity={0.9}
-              >
-                <Image source={{ uri: property.images?.[0] || 'https://via.placeholder.com/400' }} style={styles.propertyImage} />
-                <View style={styles.propertyInfo}>
-                  <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
-                    {property.title}
-                  </Text>
-                  <View style={styles.rentedRow}>
-                    <Icon name="location-outline" size={14} color="#0F6980" />
-                    <Text style={styles.rentedText}>{property.city || ''}{property.city && property.state ? ', ' : ''}{property.state || ''}</Text>
+
+        {loadingNearby ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#0F6980" />
+          </View>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            {nearbyProperties && nearbyProperties.length > 0 ? (
+              nearbyProperties.map(property => (
+                <TouchableOpacity
+                  key={property.id}
+                  style={[styles.propertyCard, { backgroundColor: colors.card }]}
+                  onPress={() => (navigation as any).navigate('PropertyDetailFull', { propertyId: property.id })}
+                  activeOpacity={0.9}
+                >
+                  <Image source={{ uri: property.images?.[0] || 'https://via.placeholder.com/400' }} style={styles.propertyImage} />
+                  <View style={styles.propertyInfo}>
+                    <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
+                      {property.title}
+                    </Text>
+                    <View style={styles.rentedRow}>
+                      <Icon name="location-outline" size={14} color="#0F6980" />
+                      <Text style={styles.rentedText}>
+                        {property.city || ''}{property.city && property.state ? ', ' : ''}{property.state || ''}
+                      </Text>
+                    </View>
+                    <View style={styles.priceRow}>
+                      <Text style={[styles.priceText, { color: colors.text }]}>${property.price}</Text>
+                      <Text style={[styles.priceUnit, { color: colors.textSecondary }]}>/month</Text>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No properties found</Text>
-            </View>
-          )}
-        </ScrollView>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                  No nearby properties found
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        )}
       </Animated.View>
 
       {/* Top rated / Featured properties */}
@@ -520,11 +610,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginBottom: 8,
   },
   rentedText: {
     fontSize: 12,
     color: '#0F6980',
     fontWeight: '500',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  priceUnit: {
+    fontSize: 12,
   },
   emptyContainer: {
     padding: 20,

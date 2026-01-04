@@ -42,6 +42,27 @@ export const propertyService = {
     });
   },
 
+  async getNearbyProperties(params: {
+    latitude: number;
+    longitude: number;
+    radius?: number;
+    limit?: number;
+  }): Promise<{ properties: Property[]; total: number }> {
+    const response = await apiService.get<{
+      success: boolean;
+      data: {
+        properties: Property[];
+        count: number;
+      }
+    }>('/properties/nearby', {
+      params,
+    });
+    return {
+      properties: response.data.properties,
+      total: response.data.count,
+    };
+  },
+
   async getPropertyById(id: string): Promise<Property> {
     return apiService.get<Property>(`/properties/${id}`);
   },
@@ -100,6 +121,19 @@ export const propertyService = {
       `/favorites/check/${propertyId}`
     );
     return response.isFavorite;
+  },
+
+  // Amenities
+  async getAmenities(params?: {
+    category?: string;
+  }): Promise<{ data: Array<{ id: string; name: string; icon: string; category: string }> }> {
+    return apiService.get<{ data: Array<{ id: string; name: string; icon: string; category: string }> }>('/amenities', {
+      params,
+    });
+  },
+
+  async getAmenityCategories(): Promise<{ data: Array<{ id: string; name: string; description?: string }> }> {
+    return apiService.get<{ data: Array<{ id: string; name: string; description?: string }> }>('/amenities/categories');
   },
 
   // Price Prediction (AI Feature)

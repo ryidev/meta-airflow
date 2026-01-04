@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
+import { propertyService } from '../services/propertyService';
 
 interface FilterModalProps {
   visible: boolean;
@@ -35,6 +37,8 @@ export interface FilterValues {
   latitude?: number;
   longitude?: number;
   radius?: number;
+  amenities?: string[];
+  amenityCategory?: string;
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({
@@ -45,6 +49,56 @@ const FilterModal: React.FC<FilterModalProps> = ({
 }) => {
   const { colors } = useTheme();
   const [filters, setFilters] = useState<FilterValues>(initialFilters || {});
+  const [amenities, setAmenities] = useState<Array<{ id: string; name: string; icon: string; category: string }>>([]);
+  const [amenityCategories, setAmenityCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingAmenities, setLoadingAmenities] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      fetchAmenityCategories();
+      fetchAmenities();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (visible) {
+      if (filters.amenityCategory) {
+        fetchAmenities(filters.amenityCategory);
+      } else {
+        // When amenityCategory is undefined or "All", fetch all amenities
+        fetchAmenities();
+      }
+    }
+  }, [filters.amenityCategory, visible]);
+
+  const fetchAmenityCategories = async () => {
+    try {
+      const response = await propertyService.getAmenityCategories();
+      setAmenityCategories(response.data || []);
+    } catch (error) {
+      console.error('Error fetching amenity categories:', error);
+    }
+  };
+
+  const fetchAmenities = async (category?: string) => {
+    try {
+      setLoadingAmenities(true);
+      const response = await propertyService.getAmenities(category ? { category } : undefined);
+      setAmenities(response.data || []);
+    } catch (error) {
+      console.error('Error fetching amenities:', error);
+    } finally {
+      setLoadingAmenities(false);
+    }
+  };
+
+  const toggleAmenity = (amenityId: string) => {
+    const currentAmenities = filters.amenities || [];
+    const newAmenities = currentAmenities.includes(amenityId)
+      ? currentAmenities.filter(id => id !== amenityId)
+      : [...currentAmenities, amenityId];
+    updateFilter('amenities', newAmenities.length > 0 ? newAmenities : undefined);
+  };
 
   const updateFilter = (key: keyof FilterValues, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -183,6 +237,92 @@ const FilterModal: React.FC<FilterModalProps> = ({
                   </TouchableOpacity>
                 ))}
               </View>
+            </View>
+
+            {/* Amenity Categories */}
+            <View style={styles.filterSection}>
+              <Text style={[styles.filterLabel, { color: colors.text }]}>Amenity Category</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+                <TouchableOpacity
+                  style={[
+                    styles.categoryChip,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    !filters.amenityCategory && styles.categoryChipActive,
+                  ]}
+                  onPress={() => updateFilter('amenityCategory', undefined)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      { color: colors.text },
+                      !filters.amenityCategory && styles.categoryChipTextActive,
+                    ]}
+                  >
+                    All
+                  </Text>
+                </TouchableOpacity>
+                {amenityCategories.map((category) => (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[
+                      styles.categoryChip,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      filters.amenityCategory === category.name && styles.categoryChipActive,
+                    ]}
+                    onPress={() => updateFilter('amenityCategory', category.name)}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        { color: colors.text },
+                        filters.amenityCategory === category.name && styles.categoryChipTextActive,
+                      ]}
+                    >
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Amenities */}
+            <View style={styles.filterSection}>
+              <Text style={[styles.filterLabel, { color: colors.text }]}>Amenities</Text>
+              {loadingAmenities ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#0F6980" />
+                </View>
+              ) : (
+                <View style={styles.amenitiesGrid}>
+                  {amenities && amenities.length > 0 ? (
+                    amenities.map((amenity) => (
+                      <TouchableOpacity
+                        key={amenity.id}
+                        style={[
+                          styles.amenityChip,
+                          { backgroundColor: colors.surface, borderColor: colors.border },
+                          filters.amenities?.includes(amenity.id) && styles.amenityChipActive,
+                        ]}
+                        onPress={() => toggleAmenity(amenity.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.amenityChipText,
+                            { color: colors.text },
+                            filters.amenities?.includes(amenity.id) && styles.amenityChipTextActive,
+                          ]}
+                        >
+                          {amenity.icon} {amenity.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                      No amenities available
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
 
             {/* Sort By */}
@@ -353,6 +493,59 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  horizontalScroll: {
+    flexGrow: 0,
+  },
+  categoryChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  categoryChipActive: {
+    backgroundColor: '#0F6980',
+    borderColor: '#0F6980',
+  },
+  categoryChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  categoryChipTextActive: {
+    color: '#FFFFFF',
+  },
+  amenitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  amenityChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  amenityChipActive: {
+    backgroundColor: '#0F6980',
+    borderColor: '#0F6980',
+  },
+  amenityChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  amenityChipTextActive: {
+    color: '#FFFFFF',
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 12,
   },
 });
 
