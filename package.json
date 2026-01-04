@@ -1,5 +1,5 @@
 {
-  "name": "MetaAirflow",
+  "name": "testApp",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -23,7 +23,6 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "^2.30.0",
     "react-native-image-picker": "^8.2.1",
-    "react-native-reanimated": "^4.2.1",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.19.0",
     "react-native-vector-icons": "^10.3.0"

@@ -6,6 +6,7 @@ export interface User {
   phone?: string;
   avatar?: string;
   createdAt: string;
+  role?: 'user' | 'admin';
 }
 
 export interface AuthResponse {
@@ -46,6 +47,7 @@ export interface Property {
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface CreatePropertyData {
@@ -120,6 +122,7 @@ export interface CreateBookingData {
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
+  AdminDashboard: undefined;
 };
 
 
@@ -128,6 +131,7 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  AdminLogin: undefined;
 };
 
 export type MainTabParamList = {

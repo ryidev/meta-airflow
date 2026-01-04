@@ -24,7 +24,7 @@ interface Props {
 
 const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
   const { colors } = useTheme();
-  
+
   // Animation values
   const fadeAnims = useRef([
     new Animated.Value(0),
@@ -39,7 +39,7 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
 
   useEffect(() => {
     // Stagger animation for images
-    const imageAnimations = fadeAnims.map((anim, index) => 
+    const imageAnimations = fadeAnims.map((anim, index) =>
       Animated.timing(anim, {
         toValue: 1,
         duration: 600,
@@ -76,7 +76,7 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={colors.text === '#FFFFFF' ? 'light-content' : 'dark-content'} />
-      
+
       {/* Property Images Grid */}
       <View style={styles.imageGrid}>
         {/* Row 1 */}
@@ -140,18 +140,21 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
               resizeMode="cover"
             />
           </Animated.View>
+          {/* Secret Admin Button */}
           <Animated.View style={[styles.imageContainer, styles.smallImage, { opacity: fadeAnims[5] }]}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800' }}
-              style={styles.image}
-              resizeMode="cover"
-            />
+            <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('AdminLogin' as any)}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800' }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
           </Animated.View>
         </View>
       </View>
 
       {/* Content Section */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.content,
           {
@@ -164,7 +167,7 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
       </Animated.View>
 
       {/* Buttons */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.buttonContainer,
           {

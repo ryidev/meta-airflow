@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,24 +8,30 @@ import {
   TextInput,
   Image,
   Animated,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
+import { nearProperties, topRatedProperties, userProperties, allProperties } from './mockData';
+import PropertyCard from './components/PropertyCard';
+import AddPropertyForm from './components/AddPropertyForm';
+import UserPropertiesList from './components/UserPropertiesList';
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const [selectedTab, setSelectedTab] = useState<'rent' | 'buy'>('rent');
+  const [listingMode, setListingMode] = useState<'list' | 'create'>('list');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   // Animation values
-  const fadeAnim = new Animated.Value(0);
-  const slideHeaderAnim = new Animated.Value(-50);
-  const scaleSearchAnim = new Animated.Value(0.9);
-  const slideSection1Anim = new Animated.Value(50);
-  const slideSection2Anim = new Animated.Value(50);
-  const slideSection3Anim = new Animated.Value(50);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideHeaderAnim = useRef(new Animated.Value(-50)).current;
+  const scaleSearchAnim = useRef(new Animated.Value(0.9)).current;
+  const slideSection1Anim = useRef(new Animated.Value(50)).current;
+  const slideSection2Anim = useRef(new Animated.Value(50)).current;
+  const slideSection3Anim = useRef(new Animated.Value(50)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -68,58 +74,8 @@ const HomeScreen: React.FC = () => {
     ]).start();
   }, []);
 
-  // Dummy data
-  const nearProperties = [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400',
-      rating: 4.8,
-      reviews: 73,
-      title: 'Entire Bromo mountain view Cabin in Suraya',
-      location: 'Malang, Probolinggo',
-      rooms: 2,
-      area: 673,
-      price: 526,
-    },
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
-      rating: 4.9,
-      reviews: 104,
-      title: 'Modern Beach House',
-      location: 'Surabaya, Beach Road',
-      rooms: 3,
-      area: 850,
-      price: 750,
-    },
-  ];
-
-  const topRatedProperties = [
-    {
-      id: '3',
-      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400',
-      rating: 4.9,
-      reviews: 104,
-      title: 'Entire private villa in Surabaya City',
-      location: 'Harapan Raya, Surabaya',
-      rooms: 2,
-      area: 488,
-      price: 400,
-    },
-    {
-      id: '4',
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400',
-      rating: 4.7,
-      reviews: 89,
-      title: 'Luxury Apartment',
-      location: 'Central Surabaya',
-      rooms: 4,
-      area: 920,
-      price: 850,
-    },
-  ];
-
-  const toggleFavorite = (id: string) => {
+  const toggleFavorite = (id: string, e: any) => {
+    e.stopPropagation();
     setFavorites(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
@@ -131,64 +87,25 @@ const HomeScreen: React.FC = () => {
     });
   };
 
-  // Gabungkan semua properties untuk favorites
-  const allProperties = [...nearProperties, ...topRatedProperties];
+  const handleAddPropertySubmit = (data: any) => {
+    // Logic to handle new property submission
+    console.log('New Property Data:', data);
+    Alert.alert('Success', 'Property submitted successfully!');
+    setListingMode('list');
+  };
 
-  const renderPropertyCard = (property: any) => (
-    <TouchableOpacity 
-      key={property.id} 
-      style={[styles.propertyCard, { backgroundColor: colors.card }]}
-      onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
-      activeOpacity={0.9}
-    >
-      <Image source={{ uri: property.image }} style={styles.propertyImage} />
-      <TouchableOpacity 
-        style={styles.favoriteButton}
-        activeOpacity={0.7}
-        onPress={(e) => {
-          e.stopPropagation();
-          toggleFavorite(property.id);
-        }}
-      >
-        <Icon 
-          name={favorites.has(property.id) ? "heart" : "heart-outline"} 
-          size={24} 
-          color={favorites.has(property.id) ? "#FF385C" : "#FFFFFF"} 
-        />
-      </TouchableOpacity>
-      <View style={styles.propertyInfo}>
-        <View style={styles.ratingRow}>
-          <Icon name="star" size={16} color="#FFB800" />
-          <Text style={[styles.ratingText, { color: colors.text }]}>{property.rating}</Text>
-          <Text style={[styles.reviewsText, { color: colors.textSecondary }]}>({property.reviews})</Text>
-        </View>
-        <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
-          {property.title}
-        </Text>
-        <Text style={[styles.locationSubtext, { color: colors.textSecondary }]}>{property.location}</Text>
-        <View style={styles.detailsRow}>
-          <View style={styles.detailItem}>
-            <Icon name="bed-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>{property.rooms} room</Text>
-          </View>
-          <View style={styles.detailItem}>
-            <Icon name="resize-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>{property.area} m²</Text>
-          </View>
-        </View>
-        <Text style={[styles.priceText, { color: colors.text }]}>
-          ${property.price}
-          <Text style={[styles.priceUnit, { color: colors.textSecondary }]}> /month</Text>
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const sectionStyle = (animValue: Animated.Value) => ({
+    marginTop: 24,
+    paddingLeft: 16,
+    opacity: fadeAnim,
+    transform: [{ translateY: animValue }]
+  });
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <Animated.View 
+        <Animated.View
           style={[
             styles.topBar,
             {
@@ -198,7 +115,9 @@ const HomeScreen: React.FC = () => {
           ]}
         >
           <View style={styles.locationContainer}>
-            <Text style={[styles.findText, { color: colors.textSecondary }]}>Find your place in</Text>
+            <Text style={[styles.findText, { color: colors.textSecondary }]}>
+              {selectedTab === 'rent' ? 'Find your place in' : 'List property in'}
+            </Text>
             <View style={styles.locationRow}>
               <Icon name="location" size={20} color="#0F6980" />
               <Text style={[styles.locationText, { color: colors.text }]}>Surabaya, Indonesia</Text>
@@ -206,15 +125,15 @@ const HomeScreen: React.FC = () => {
             </View>
           </View>
           <View style={styles.avatarContainer}>
-            <Image 
-              source={{ uri: 'https://assets.pikiran-rakyat.com/crop/0x0:0x0/720x0/webp/photo/2025/09/26/1043297320.jpg' }} 
-              style={styles.avatar} 
+            <Image
+              source={{ uri: 'https://assets.pikiran-rakyat.com/crop/0x0:0x0/720x0/webp/photo/2025/09/26/1043297320.jpg' }}
+              style={styles.avatar}
             />
           </View>
         </Animated.View>
 
-        {/* Search Bar */}
-        <Animated.View 
+        {/* Search Bar - Always Visible */}
+        <Animated.View
           style={[
             styles.searchContainer,
             {
@@ -227,7 +146,11 @@ const HomeScreen: React.FC = () => {
           <Icon name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search address, city, location"
+            placeholder={
+              selectedTab === 'rent'
+                ? "Search address, city, location"
+                : "Search your properties"
+            }
             placeholderTextColor={colors.textSecondary}
           />
           <TouchableOpacity style={styles.filterButton}>
@@ -235,85 +158,157 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </Animated.View>
 
+        {/* Start Toggle Section */}
+        <Animated.View
+          style={{
+            marginTop: 24,
+            opacity: fadeAnim,
+            transform: [{ translateY: scaleSearchAnim }]
+          }}
+        >
+          <Text style={[styles.questionText, { color: colors.text }]}>What do you need?</Text>
+          <View style={[styles.toggleContainer, { backgroundColor: colors.surface }]}>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                selectedTab === 'rent' && { backgroundColor: colors.primary }
+              ]}
+              onPress={() => setSelectedTab('rent')}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.toggleText,
+                  selectedTab === 'rent' ? { color: '#FFFFFF' } : { color: colors.textSecondary }
+                ]}
+              >
+                I need to rent
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                selectedTab === 'buy' && { backgroundColor: colors.primary }
+              ]}
+              onPress={() => {
+                setSelectedTab('buy');
+                setListingMode('list');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.toggleText,
+                  selectedTab === 'buy' ? { color: '#FFFFFF' } : { color: colors.textSecondary }
+                ]}
+              >
+                I want to list
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+        {/* End Toggle Section */}
+
       </View>
 
-      {/* Near your location */}
-      <Animated.View 
-        style={[
-          styles.section,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideSection1Anim }]
-          }
-        ]}
-      >
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Near your location</Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>243 properties in Surabaya</Text>
-          </View>
-          <TouchableOpacity>
-            <Text style={styles.seeAllText}>See all</Text>
-          </TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {nearProperties.map(property => renderPropertyCard(property))}
-        </ScrollView>
-      </Animated.View>
+      {/* Content Section */}
+      {selectedTab === 'rent' ? (
+        <>
+          {/* Near your location */}
+          <Animated.View style={sectionStyle(slideSection1Anim)}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Near your location</Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>243 properties in Surabaya</Text>
+              </View>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>See all</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+              {nearProperties.map(property => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={favorites.has(property.id)}
+                />
+              ))}
+            </ScrollView>
+          </Animated.View>
 
-      {/* Top rated in Surabaya */}
-      <Animated.View 
-        style={[
-          styles.section,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideSection2Anim }]
-          }
-        ]}
-      >
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Top rated in Surabaya</Text>
-          </View>
-          <TouchableOpacity>
-            <Text style={styles.seeAllText}>See all</Text>
-          </TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {topRatedProperties.map(property => renderPropertyCard(property))}
-        </ScrollView>
-      </Animated.View>
+          {/* Top rated in Surabaya */}
+          <Animated.View style={sectionStyle(slideSection2Anim)}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Top rated in Surabaya</Text>
+              </View>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>See all</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+              {topRatedProperties.map(property => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={favorites.has(property.id)}
+                />
+              ))}
+            </ScrollView>
+          </Animated.View>
 
-      {/* Your favorites */}
-      <Animated.View 
-        style={[
-          styles.section,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideSection3Anim }]
-          }
-        ]}
-      >
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>your favorites</Text>
-          </View>
-          <TouchableOpacity>
-            <Text style={styles.seeAllText}>See all</Text>
-          </TouchableOpacity>
-        </View>
-        {allProperties.filter(p => favorites.has(p.id)).length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-            {allProperties.filter(p => favorites.has(p.id)).map(property => renderPropertyCard(property))}
-          </ScrollView>
+          {/* Your favorites */}
+          <Animated.View style={sectionStyle(slideSection3Anim)}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Your favorites</Text>
+              </View>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>See all</Text>
+              </TouchableOpacity>
+            </View>
+            {allProperties.filter(p => favorites.has(p.id)).length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+                {allProperties.filter(p => favorites.has(p.id)).map(property => (
+                  <PropertyCard
+                    key={property.id}
+                    property={property}
+                    onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
+                    onToggleFavorite={toggleFavorite}
+                    isFavorite={favorites.has(property.id)}
+                  />
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyFavContainer}>
+                <Icon name="heart-outline" size={48} color={colors.textSecondary} />
+                <Text style={[styles.emptyFavText, { color: colors.textSecondary }]}>No favorites yet</Text>
+                <Text style={[styles.emptyFavSubtext, { color: colors.textSecondary }]}>Tap the heart icon to save properties</Text>
+              </View>
+            )}
+          </Animated.View>
+        </>
+      ) : (
+        listingMode === 'list' ? (
+          <UserPropertiesList
+            properties={userProperties}
+            onAddPress={() => setListingMode('create')}
+            onPropertyPress={(property) => (navigation as any).navigate('PropertyDetailFull', { property })}
+            containerStyle={{ opacity: fadeAnim, transform: [{ translateY: slideSection1Anim }] }}
+          />
         ) : (
-          <View style={styles.emptyFavContainer}>
-            <Icon name="heart-outline" size={48} color={colors.textSecondary} />
-            <Text style={[styles.emptyFavText, { color: colors.textSecondary }]}>No favorites yet</Text>
-            <Text style={[styles.emptyFavSubtext, { color: colors.textSecondary }]}>Tap the heart icon to save properties</Text>
-          </View>
-        )}
-      </Animated.View>
+          <AddPropertyForm
+            onBack={() => setListingMode('list')}
+            onSubmit={handleAddPropertySubmit}
+            containerStyle={{ opacity: fadeAnim, transform: [{ translateY: slideSection1Anim }] }}
+          />
+        )
+      )}
     </ScrollView>
   );
 };
@@ -332,7 +327,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
     marginTop: 20,
-
   },
   locationContainer: {
     flex: 1,
@@ -377,37 +371,7 @@ const styles = StyleSheet.create({
   filterButton: {
     padding: 4,
   },
-  questionText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  tab: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    backgroundColor: '#F1F5F9',
-  },
-  tabActive: {
-    backgroundColor: '#0F6980',
-  },
-  tabText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#64748B',
-  },
-  tabTextActive: {
-    color: '#FFFFFF',
-  },
-  section: {
-    marginTop: 24,
-    paddingLeft: 16,
-  },
-  sectionHeader: {
+  sectionHeader: { // Used in HomeScreen for rent sections
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -430,83 +394,6 @@ const styles = StyleSheet.create({
   horizontalScroll: {
     paddingBottom: 8,
   },
-  propertyCard: {
-    width: 280,
-    marginRight: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  propertyImage: {
-    width: '100%',
-    height: 180,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    backgroundColor: '#F1F5F9',
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  propertyInfo: {
-    padding: 12,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  ratingText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  reviewsText: {
-    fontSize: 14,
-    marginLeft: 2,
-  },
-  propertyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-    lineHeight: 22,
-  },
-  locationSubtext: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 12,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  detailText: {
-    fontSize: 14,
-  },
-  priceText: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  priceUnit: {
-    fontSize: 14,
-    fontWeight: '400',
-  },
   emptyFavContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -521,6 +408,28 @@ const styles = StyleSheet.create({
   emptyFavSubtext: {
     fontSize: 14,
     marginTop: 4,
+  },
+  questionText: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 50,
+    padding: 4,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggleText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 
