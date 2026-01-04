@@ -20,6 +20,7 @@ import MapViewComponent from '../../components/MapView';
 import FilterModal, { FilterValues } from '../../components/FilterModal';
 import { propertyService } from '../../services/propertyService';
 import { Property } from '../../types';
+import { PropertyCardSkeleton, CategoryCardSkeleton } from '../../components/SkeletonLoader';
 
 const ExploreScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -31,6 +32,8 @@ const ExploreScreen: React.FC = () => {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingNearby, setLoadingNearby] = useState(false);
+  const [amenityCategories, setAmenityCategories] = useState<Array<{ id: string; name: string; description?: string }>>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<FilterValues>({
@@ -66,6 +69,7 @@ const ExploreScreen: React.FC = () => {
 
     // Get user location and fetch nearby properties
     requestLocationAndFetchNearby();
+    fetchAmenityCategories();
   }, []);
 
   useEffect(() => {
@@ -131,6 +135,18 @@ const ExploreScreen: React.FC = () => {
     }
   };
 
+  const fetchAmenityCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await propertyService.getAmenityCategories();
+      setAmenityCategories(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch amenity categories:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
   const fetchProperties = async () => {
     try {
       setLoading(true);
@@ -181,61 +197,21 @@ const ExploreScreen: React.FC = () => {
       image: p.images?.[0],
     }));
 
-  const topRatedProperties = [
-    {
-      id: '4',
-      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400',
-      title: 'Beach',
-    },
-    {
-      id: '5',
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400',
-      title: 'Luxury ',
-    },
-    {
-      id:'6',
-      image: 'https://www.laconservancy.org/wp-content/uploads/2022/10/JapaneseHouse_KellySutherlinMcLeodArchitectureInc.jpg',
-      title: 'Japanese',
-    },
-  ];
-
-  const renderPropertyCard = (property: any) => (
-    <TouchableOpacity
-      key={property.id}
-      style={[styles.propertyCard, { backgroundColor: colors.card }]}
-      onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
-      activeOpacity={0.9}
-    >
-      <Image source={{ uri: property.image }} style={styles.propertyImage} />
-      <View style={styles.propertyInfo}>
-
-        <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
-          {property.title}
-        </Text>
-        <View style={styles.rentedRow}>
-          <Icon name="people-outline" size={14} color="#0F6980" />
-          <Text style={styles.rentedText}>{property.rented} people rented</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-  const renderPropertyCard1 = (property: any) => (
-    <TouchableOpacity
-      key={property.id}
-      style={[styles.propertyCard1, { backgroundColor: colors.card }]}
-      onPress={() => (navigation as any).navigate('PropertyDetailFull', { property })}
-      activeOpacity={0.9}
-    >
-      <Image source={{ uri: property.image }} style={styles.propertyImage} />
-      <View style={styles.propertyInfo}>
-
-        <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
-          {property.title}
-        </Text>
-
-      </View>
-    </TouchableOpacity>
-  );
+  const getCategoryIcon = (categoryName: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'Comfort': 'bed-outline',
+      'Safety': 'shield-checkmark-outline',
+      'Entertainment': 'game-controller-outline',
+      'Convenience': 'location-outline',
+      'Recreation': 'fitness-outline',
+      'Utilities': 'water-outline',
+      'Technology': 'wifi-outline',
+      'Kitchen': 'restaurant-outline',
+      'Outdoor': 'leaf-outline',
+      'Accessibility': 'accessibility-outline',
+    };
+    return iconMap[categoryName] || 'home-outline';
+  };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
@@ -300,13 +276,6 @@ const ExploreScreen: React.FC = () => {
         )}
       </Animated.View>
 
-      {/* Loading indicator */}
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0F6980" />
-        </View>
-      )}
-
       <Animated.View
         style={[
           styles.section,
@@ -325,20 +294,22 @@ const ExploreScreen: React.FC = () => {
               </Text>
             )}
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('ExploreDetail' as never, {
+          <TouchableOpacity onPress={() => (navigation as any).navigate('ExploreDetail', {
             properties: nearbyProperties,
             title: 'Nearby Properties',
             location: userLocation,
             isNearby: true
-          } as never)}>
+          })}>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
 
         {loadingNearby ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#0F6980" />
-          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+          </ScrollView>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
             {nearbyProperties && nearbyProperties.length > 0 ? (
@@ -378,7 +349,76 @@ const ExploreScreen: React.FC = () => {
         )}
       </Animated.View>
 
-      {/* Top rated / Featured properties */}
+      {/* Filtered Properties Section */}
+      <Animated.View
+        style={[
+          styles.section,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Available Properties</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              {properties.length} properties found
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => (navigation as any).navigate('ExploreDetail', {
+            properties: properties,
+            title: 'All Properties',
+            filters: filters
+          })}>
+            <Text style={styles.seeAllText}>See all</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+          {loading ? (
+            <>
+              <PropertyCardSkeleton />
+              <PropertyCardSkeleton />
+              <PropertyCardSkeleton />
+            </>
+          ) : properties && properties.length > 0 ? (
+            properties.slice(0, 10).map(property => (
+              <TouchableOpacity
+                key={property.id}
+                style={[styles.propertyCard, { backgroundColor: colors.card }]}
+                onPress={() => (navigation as any).navigate('PropertyDetailFull', { propertyId: property.id })}
+                activeOpacity={0.9}
+              >
+                <Image source={{ uri: property.images?.[0] || 'https://via.placeholder.com/400' }} style={styles.propertyImage} />
+                <View style={styles.propertyInfo}>
+                  <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
+                    {property.title}
+                  </Text>
+                  <View style={styles.rentedRow}>
+                    <Icon name="location-outline" size={14} color="#0F6980" />
+                    <Text style={styles.rentedText}>
+                      {property.city || ''}{property.city && property.state ? ', ' : ''}{property.state || ''}
+                    </Text>
+                  </View>
+                  <View style={styles.priceRow}>
+                    <Text style={[styles.priceText, { color: colors.text }]}>${property.price}</Text>
+                    <Text style={[styles.priceUnit, { color: colors.textSecondary }]}>/month</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No properties found. Try adjusting your filters.
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </Animated.View>
+
+      {/* Amenity Categories - Exploring Living Style */}
       <Animated.View
         style={[
           styles.section,
@@ -391,26 +431,55 @@ const ExploreScreen: React.FC = () => {
         <View style={styles.sectionHeader}>
           <View>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Exploring about your living style?</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Browse by amenity categories</Text>
           </View>
-
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {topRatedProperties.map(property => (
-            <TouchableOpacity
-              key={property.id}
-              style={[styles.propertyCard1, { backgroundColor: colors.card }]}
-              onPress={() => {}}
-              activeOpacity={0.9}
-            >
-              <Image source={{ uri: property.image }} style={styles.propertyImage} />
-              <View style={styles.propertyInfo}>
-                <Text style={[styles.propertyTitle, { color: colors.text }]} numberOfLines={2}>
-                  {property.title}
-                </Text>
+
+        {loadingCategories ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            <CategoryCardSkeleton />
+            <CategoryCardSkeleton />
+            <CategoryCardSkeleton />
+          </ScrollView>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            {amenityCategories && amenityCategories.length > 0 ? (
+              amenityCategories.map(category => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[styles.categoryCard, { backgroundColor: colors.card }]}
+                  onPress={() => {
+                    setFilters(prev => ({ ...prev, amenityCategory: category.name }));
+                    setShowFilterModal(true);
+                  }}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.categoryIconContainer}>
+                    <Icon
+                      name={getCategoryIcon(category.name)}
+                      size={40}
+                      color="#0F6980"
+                    />
+                  </View>
+                  <View style={styles.categoryInfo}>
+                    <Text style={[styles.categoryTitle, { color: colors.text }]} numberOfLines={2}>
+                      {category.name}
+                    </Text>
+                    {category.description && (
+                      <Text style={[styles.categoryDescription, { color: colors.textSecondary }]} numberOfLines={2}>
+                        {category.description}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No categories available</Text>
               </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+            )}
+          </ScrollView>
+        )}
       </Animated.View>
     </ScrollView>
   );
@@ -593,14 +662,6 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 14,
   },
-  priceText: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  priceUnit: {
-    fontSize: 14,
-    fontWeight: '400',
-  },
   emptyFavText: {
     fontSize: 15,
     fontStyle: 'italic',
@@ -643,6 +704,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+  },
+  categoryCard: {
+    width: 200,
+    marginRight: 16,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    minHeight: 140,
+  },
+  categoryIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#0F698015',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  categoryDescription: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
 
