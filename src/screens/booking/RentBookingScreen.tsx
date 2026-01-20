@@ -219,7 +219,7 @@ const RentBookingScreen: React.FC = () => {
               >
                 <View style={styles.paymentLeft}>
                   <View style={styles.paymentIconContainer}>
-                    <Icon name={method.icon} size={24} color="#6366F1" />
+                    <Icon name={method.icon} size={24} color="#0F6980" />
                   </View>
                   <View>
                     <Text style={styles.paymentName}>{method.name}</Text>
@@ -387,12 +387,12 @@ const styles = StyleSheet.create({
   },
   editText: {
     fontSize: 14,
-    color: '#6366F1',
+    color: '#0F6980',
     fontWeight: '500',
   },
   moreInfoText: {
     fontSize: 14,
-    color: '#6366F1',
+    color: '#0F6980',
     fontWeight: '500',
   },
   inputDetailRow: {
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#6366F1',
+    color: '#0F6980',
   },
   paymentMethod: {
     flexDirection: 'row',
@@ -479,13 +479,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   radioButtonSelected: {
-    borderColor: '#6366F1',
+    borderColor: '#0F6980',
   },
   radioButtonInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#0F6980',
   },
   policiesContainer: {
     flexDirection: 'row',
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   bookingButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#0F6980',
     borderRadius: 28,
     paddingVertical: 16,
     alignItems: 'center',
