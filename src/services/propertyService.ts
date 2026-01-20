@@ -272,18 +272,24 @@ export const propertyService = {
     radius?: number;
     status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PENDING_REVIEW' | 'REVIEW_PENDING';
   }): Promise<{ properties: Property[]; total: number; page: number; limit: number }> {
+    // Add default limit to get all properties
+    const queryParams = {
+      ...params,
+      limit: params?.limit || 1000, // Default to 1000 to show all properties
+    };
+
     // Check if the backend returns standard wrapped response format
     const response = await apiService.get<{
       success: boolean;
       data: {
         properties: Property[];
-        count: number; // API often returns 'count' or 'total'
+        count: number;
+        total?: number;
         page: number;
         limit: number;
-        total?: number;
-      }
+      };
     }>('/properties', {
-      params,
+      params: queryParams,
     });
 
     // Depending on actual API shape, it might be in response.data or just response if existing interceptors handle it

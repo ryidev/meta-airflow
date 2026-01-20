@@ -2,11 +2,16 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  name: string; // Computed full name
   phone?: string;
   avatar?: string;
   createdAt: string;
-  role?: 'user' | 'admin';
+  role: 'USER' | 'ADMIN';
+  dateOfBirth?: string;
+  isActive?: boolean;
+  profilePicture?: string | null;
 }
 
 export interface AuthResponse {
@@ -23,7 +28,8 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
 }
 
