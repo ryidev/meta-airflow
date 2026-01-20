@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -9,6 +9,8 @@ import {
   View,
   Alert,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -26,21 +28,23 @@ interface Props {
 
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const { register } = useAuth();
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false);
-  const [nameFocused, setNameFocused] = useState(false);
+  const [firstNameFocused, setFirstNameFocused] = useState(false);
+  const [lastNameFocused, setLastNameFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Animation values
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(50);
-  const scaleAnim = new Animated.Value(0.9);
+  // Animation values - use useRef to prevent re-initialization
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -65,29 +69,39 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   }, []);
 
   const handleRegister = async () => {
-    if (!name || !email || !password || !phoneNumber) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    if (!firstName || !lastName || !email || !password) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      await register({ name, email, password, phone: phoneNumber });
-      Alert.alert(
-        'Success',
-        'Account created successfully! Please login.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
+      const registerData = {
+        firstName,
+        lastName,
+        email,
+        password,
+        phone: phoneNumber || undefined,
+      };
+
+      console.log('Sending register data:', registerData);
+
+      await register(registerData);
+      Alert.alert('Success', 'Account created successfully!');
     } catch (error: any) {
-      Alert.alert(
-        'Registration Failed',
-        error.response?.data?.message || 'Failed to create account'
-      );
+      console.error('Register error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Validation errors:', JSON.stringify(error.response?.data?.errors, null, 2));
+      console.error('Error status:', error.response?.status);
+
+      // Format validation errors for user
+      let errorMessage = error.response?.data?.message || error.message || 'Failed to create account';
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        const validationErrors = error.response.data.errors.map((err: any) => err.message || err).join('\n');
+        errorMessage = `${errorMessage}\n\n${validationErrors}`;
+      }
+
+      Alert.alert('Registration Failed', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -102,8 +116,14 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     setIsLoading(true);
     try {
       const authResponse = await googleOAuthService.signIn();
+      // Split name into firstName and lastName
+      const nameParts = authResponse.user.name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
       await register({
-        name: authResponse.user.name,
+        firstName,
+        lastName,
         email: authResponse.user.email,
         password: '', // Not needed for OAuth
         phone: authResponse.user.phone,
@@ -120,175 +140,201 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container]}>
+      <StatusBar barStyle="light-content" />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Icon name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Welcome Section */}
-        <Animated.View
-          style={[
-            styles.welcomeSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
-          ]}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.heading}>Let's Explore Together!</Text>
-          <Text style={styles.subheading}>
-            Create your Placoo account to explore your dream place to live across the whole world!
-          </Text>
-        </Animated.View>
-
-        {/* Form Section */}
-        <Animated.View
-          style={[
-            styles.formSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}
-        >
-          {/* Name Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name</Text>
-            <View style={[
-              styles.inputWrapper,
-              nameFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
-            ]}>
-              <Icon name="person-outline" size={20} color={nameFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="John Doe"
-                placeholderTextColor="#94A3B8"
-                value={name}
-                onChangeText={setName}
-                onFocus={() => setNameFocused(true)}
-                onBlur={() => setNameFocused(false)}
-              />
-            </View>
-          </View>
-
-          {/* Email Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Username / Email</Text>
-            <View style={[
-              styles.inputWrapper,
-              emailFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
-            ]}>
-              <Icon name="mail-outline" size={20} color={emailFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="example@gmail.com"
-                placeholderTextColor="#94A3B8"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-              />
-            </View>
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={[
-              styles.inputWrapper,
-              passwordFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
-            ]}>
-              <Icon name="lock-closed-outline" size={20} color={passwordFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Insert your password here"
-                placeholderTextColor="#94A3B8"
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-                autoCapitalize="none"
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                <Icon
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color={passwordFocused ? "#6366F1" : "#94A3B8"}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Phone Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone number</Text>
-            <View style={[
-              styles.inputWrapper,
-              phoneFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
-            ]}>
-              <TouchableOpacity style={styles.countryCodeButton}>
-                <Text style={styles.flagEmoji}>🇮🇩</Text>
-                <Icon name="chevron-down" size={16} color="#94A3B8" />
-              </TouchableOpacity>
-              <TextInput
-                style={styles.input}
-                placeholder="812xxxx"
-                placeholderTextColor="#94A3B8"
-                keyboardType="phone-pad"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                onFocus={() => setPhoneFocused(true)}
-                onBlur={() => setPhoneFocused(false)}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-            onPress={handleRegister}
-            disabled={isLoading}
-          >
-            <Text style={styles.loginButtonText}>
-              {isLoading ? 'Creating account...' : 'Create account'}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
-            <Icon name="logo-google" size={20} color="#DB4437" />
-            <Text style={styles.googleButtonText}>Sign up with Google</Text>
-          </TouchableOpacity>
-
-          {/* Login Link */}
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.signupLink}>Log In</Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Icon name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
           </View>
-        </Animated.View>
-      </ScrollView>
+
+          {/* Welcome Section */}
+          <Animated.View
+            style={[
+              styles.welcomeSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            <Text style={styles.heading}>Let's Explore Together!</Text>
+            <Text style={styles.subheading}>
+              Create your Placoo account to explore your dream place to live across the whole world!
+            </Text>
+          </Animated.View>
+
+          {/* Form Section */}
+          <Animated.View
+            style={[
+              styles.formSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}
+          >
+            {/* First Name Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>First Name</Text>
+              <View style={[
+                styles.inputWrapper,
+                firstNameFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
+              ]}>
+                <Icon name="person-outline" size={20} color={firstNameFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="John"
+                  placeholderTextColor="#94A3B8"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  onFocus={() => setFirstNameFocused(true)}
+                  onBlur={() => setFirstNameFocused(false)}
+                />
+              </View>
+            </View>
+
+            {/* Last Name Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Last Name</Text>
+              <View style={[
+                styles.inputWrapper,
+                lastNameFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
+              ]}>
+                <Icon name="person-outline" size={20} color={lastNameFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Doe"
+                  placeholderTextColor="#94A3B8"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  onFocus={() => setLastNameFocused(true)}
+                  onBlur={() => setLastNameFocused(false)}
+                />
+              </View>
+            </View>
+
+            {/* Email Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Username / Email</Text>
+              <View style={[
+                styles.inputWrapper,
+                emailFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
+              ]}>
+                <Icon name="mail-outline" size={20} color={emailFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="example@gmail.com"
+                  placeholderTextColor="#94A3B8"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <View style={[
+                styles.inputWrapper,
+                passwordFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
+              ]}>
+                <Icon name="lock-closed-outline" size={20} color={passwordFocused ? "#6366F1" : "#94A3B8"} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Insert your password here"
+                  placeholderTextColor="#94A3B8"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                  autoCapitalize="none"
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Icon
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color={passwordFocused ? "#6366F1" : "#94A3B8"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Phone Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Phone number</Text>
+              <View style={[
+                styles.inputWrapper,
+                phoneFocused ? styles.inputWrapperFocused : styles.inputWrapperUnfocused
+              ]}>
+                <TouchableOpacity style={styles.countryCodeButton}>
+                  <Text style={styles.flagEmoji}>🇮🇩</Text>
+                  <Icon name="chevron-down" size={16} color="#94A3B8" />
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="812xxxx"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="phone-pad"
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  onFocus={() => setPhoneFocused(true)}
+                  onBlur={() => setPhoneFocused(false)}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              onPress={handleRegister}
+              disabled={isLoading}
+            >
+              <Text style={styles.loginButtonText}>
+                {isLoading ? 'Creating account...' : 'Create account'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
+              <Icon name="logo-google" size={20} color="#DB4437" />
+              <Text style={styles.googleButtonText}>Sign up with Google</Text>
+            </TouchableOpacity>
+
+            {/* Login Link */}
+            <View style={styles.signupContainer}>
+              <Text style={styles.signupText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.signupLink}>Log In</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

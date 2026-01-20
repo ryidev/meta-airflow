@@ -92,6 +92,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateProfile = async (userData: Partial<User>) => {
+    // Save original user state for rollback
+    const originalUser = user;
+
     try {
       console.log('Calling updateProfile API with data:', userData);
 
@@ -103,16 +106,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await storageService.saveUserData(optimisticUser);
       }
 
-      // Then call API in background
+      // Call API - this is critical for backend persistence
       await authService.updateProfile(userData);
-      console.log('API call completed successfully');
+      console.log('API call completed successfully - data should be saved on backend');
 
+      // Verify by fetching updated user from backend
+      try {
+        const updatedUser = await authService.getCurrentUser();
+        console.log('Fetched updated user from backend:', JSON.stringify(updatedUser, null, 2));
+        console.log('Updated user profilePicture:', updatedUser.profilePicture);
+        console.log('Updated user avatar:', updatedUser.avatar);
+
+        setUser(updatedUser);
+        await storageService.saveUserData(updatedUser);
+      } catch (fetchError) {
+        console.warn('Could not fetch updated user, keeping optimistic update');
+      }
 
       console.log('Profile updated successfully in state');
     } catch (error: any) {
       console.error('Update profile error:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
+
+      // Rollback optimistic update on error
+      if (originalUser) {
+        console.log('Rolling back to original user data');
+        setUser(originalUser);
+        await storageService.saveUserData(originalUser);
+      }
+
       throw error;
     }
   };

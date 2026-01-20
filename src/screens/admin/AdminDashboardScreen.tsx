@@ -36,10 +36,24 @@ const AdminDashboardScreen: React.FC = () => {
   const fetchRequests = async () => {
     try {
       setIsLoading(true);
+
+      // Map frontend status to backend status
+      let backendStatus = filterStatus;
+      if (filterStatus === 'PENDING_REVIEW') {
+        // Try different status values - backend might use PENDING, REVIEW_PENDING, or PENDING_REVIEW
+        backendStatus = 'PENDING' as any;
+      }
+
+      console.log('Fetching properties with status:', backendStatus);
+
       const response = await propertyService.getPropertiesMobile({
-        status: filterStatus === 'PENDING_REVIEW' ? 'REVIEW_PENDING' as any : filterStatus as any,
+        status: backendStatus as any,
         sortBy: sortBy as any
       });
+
+      console.log(`Found ${response.properties.length} properties with status ${backendStatus}`);
+      console.log('Properties:', response.properties.map(p => ({ id: p.id, title: p.title, status: p.status })));
+
       setRequests(response.properties);
     } catch (error) {
       console.error('Error fetching property requests:', error);
@@ -164,23 +178,23 @@ const AdminDashboardScreen: React.FC = () => {
   // Client-side sort for Name if selected, otherwise list is as is from API
   // NOTE: 'price_asc' above is used as a key for 'Name'. 
   // If API doesn't support name sort, we sort here.
-  // Client-side sort and filter to ensure consistency
-  const displayRequests = [...requests]
-    .filter(item => {
-      // Normalize statuses for comparison
-      const itemStatus = (item.status || 'PENDING_REVIEW').toUpperCase();
-      // Handle the 'PENDING' case which might be 'PENDING_REVIEW' or 'pending' from backend
-      if (filterStatus === 'PENDING_REVIEW') {
-        return itemStatus === 'PENDING_REVIEW' || itemStatus === 'REVIEW_PENDING' || itemStatus === 'PENDING';
-      }
-      return itemStatus === filterStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'price_asc') {
-        return a.title.localeCompare(b.title);
-      }
-      return 0; // Default or API sorted
-    });
+  // Backend doesn't filter by status properly, so filter on client-side
+  const displayRequests = requests.filter(item => {
+    if (!item || !item.status) {
+      return false;
+    }
+
+    const itemStatus = item.status.toUpperCase();
+    console.log(`Property ${item.title}: status = ${itemStatus}, filterStatus = ${filterStatus}`);
+
+    // Match status
+    if (filterStatus === 'PENDING_REVIEW') {
+      return itemStatus === 'PENDING' || itemStatus === 'PENDING_REVIEW' || itemStatus === 'REVIEW_PENDING';
+    }
+    return itemStatus === filterStatus;
+  });
+
+  console.log(`Displaying ${displayRequests.length} requests (filtered from ${requests.length} total)`);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>

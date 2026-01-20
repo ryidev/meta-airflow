@@ -26,7 +26,9 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<User> {
-    return apiService.get<User>('/auth/me');
+    const response = await apiService.get<any>('/auth/me');
+    // Backend returns {success: true, data: {...}}
+    return response.data || response;
   },
 
   async logout(): Promise<void> {
@@ -66,6 +68,11 @@ export const authService = {
   },
 
   async uploadAvatar(formData: FormData): Promise<{ avatarUrl: string }> {
-    return apiService.uploadFormData<{ avatarUrl: string }>('/users/avatar', formData);
+    const response = await apiService.uploadFormData<any>('/users/avatar', formData);
+    // Backend may return {success: true, data: {avatarUrl: "..."}} or direct object
+    if (response.data && response.data.avatarUrl) {
+      return response.data;
+    }
+    return response;
   },
 };

@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Input, Button } from '../../components';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { authService } from '../../services/authService';
 
 const PersonalScreen: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -25,7 +26,8 @@ const PersonalScreen: React.FC = () => {
 
   // Form state
   const [profileImage, setProfileImage] = useState(user?.avatar || '');
-  const [name, setName] = useState(user?.name || '');
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -34,7 +36,8 @@ const PersonalScreen: React.FC = () => {
 
   // Form validation
   const [errors, setErrors] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     password: '',
@@ -43,9 +46,10 @@ const PersonalScreen: React.FC = () => {
   useEffect(() => {
     console.log('PersonalProf useEffect triggered with user:', user);
     if (user) {
-      console.log('Resetting form fields to:', { name: user.name, email: user.email, phone: user.phone });
+      console.log('Resetting form fields to:', { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone });
       setProfileImage(user.avatar || '');
-      setName(user.name || '');
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
       setEmail(user.email || '');
       setPhone(user.phone || '');
     }
@@ -54,19 +58,27 @@ const PersonalScreen: React.FC = () => {
   const handleImagePicker = () => {
     const options = {
       mediaType: 'photo' as const,
-      quality: 0.8,
+      quality: 0.8 as any, // Fix TypeScript error
       maxWidth: 800,
       maxHeight: 800,
     };
 
-    launchImageLibrary(options, (response) => {
+    launchImageLibrary(options, async (response) => {
       if (response.didCancel) {
         console.log('User cancelled image picker');
+        return;
       } else if (response.errorCode) {
         Alert.alert('Error', response.errorMessage || 'Failed to pick image');
       } else if (response.assets && response.assets[0]) {
-        setProfileImage(response.assets[0].uri || '');
+        const asset = response.assets[0];
+        console.log('Image picked:', asset.uri);
+
+        // Just set the local URI - we'll update profile with it directly
+        // Backend doesn't seem to have separate avatar upload endpoint
+        setProfileImage(asset.uri || '');
         setIsEditing(true);
+
+        Alert.alert('Info', 'Image selected. Click Save to update your profile.');
       }
     });
   };
@@ -74,18 +86,28 @@ const PersonalScreen: React.FC = () => {
   const validateForm = (): boolean => {
     let valid = true;
     const newErrors = {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       phone: '',
       password: '',
     };
 
-    // Validate name
-    if (!name.trim()) {
-      newErrors.name = 'Name is required';
+    // Validate first name
+    if (!firstName.trim()) {
+      newErrors.firstName = 'First name is required';
       valid = false;
-    } else if (name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    } else if (firstName.trim().length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+      valid = false;
+    }
+
+    // Validate last name
+    if (!lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+      valid = false;
+    } else if (lastName.trim().length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
       valid = false;
     }
 
@@ -134,11 +156,13 @@ const PersonalScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const updateData = {
-        name,
+      const updateData: any = {
+        firstName,
+        lastName,
         email,
         phone,
-        avatar: profileImage,
+        // Include profilePicture if changed
+        ...(profileImage && profileImage !== user?.avatar && { profilePicture: profileImage }),
         ...(newPassword && {
           currentPassword,
           newPassword,
@@ -202,7 +226,7 @@ const PersonalScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <Text style={[styles.profileName, { color: colors.text }]}>{name || 'Your Name'}</Text>
+          <Text style={[styles.profileName, { color: colors.text }]}>{`${firstName} ${lastName}` || 'Your Name'}</Text>
           <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>{email || 'your.email@example.com'}</Text>
         </View>
 
@@ -211,16 +235,30 @@ const PersonalScreen: React.FC = () => {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</Text>
 
           <Input
-            label="Full Name"
-            value={name}
+            label="First Name"
+            value={firstName}
             onChangeText={(text) => {
-              setName(text);
+              setFirstName(text);
               setIsEditing(true);
-              if (errors.name) setErrors({ ...errors, name: '' });
+              if (errors.firstName) setErrors({ ...errors, firstName: '' });
             }}
-            placeholder="Enter your full name"
+            placeholder="Enter your first name"
             leftIcon="account"
-            error={errors.name}
+            error={errors.firstName}
+            containerStyle={styles.inputContainer}
+          />
+
+          <Input
+            label="Last Name"
+            value={lastName}
+            onChangeText={(text) => {
+              setLastName(text);
+              setIsEditing(true);
+              if (errors.lastName) setErrors({ ...errors, lastName: '' });
+            }}
+            placeholder="Enter your last name"
+            leftIcon="account"
+            error={errors.lastName}
             containerStyle={styles.inputContainer}
           />
 

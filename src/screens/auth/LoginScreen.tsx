@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -9,6 +9,8 @@ import {
   View,
   Alert,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -37,10 +39,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Animation values
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(50);
-  const scaleAnim = new Animated.Value(0.9);
+  // Animation values - use useRef to prevent re-initialization
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -109,157 +111,163 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={colors.background === '#FFFFFF' ? 'dark-content' : 'light-content'} />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Icon name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Welcome Section */}
-        <Animated.View
-          style={[
-            styles.welcomeSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
-          ]}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={[styles.heading, { color: colors.text }]}>Welcome Back!</Text>
-          <Text style={[styles.subheading, { color: colors.textSecondary }]}>
-            Log In to your Placoo account to explore your dream place to live across the whole world!
-          </Text>
-        </Animated.View>
-
-        {/* Form Section */}
-        <Animated.View
-          style={[
-            styles.formSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}
-        >
-
-          {/* Username/Email Input */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Username</Text>
-            <View style={[
-              styles.inputWrapper,
-              {
-                backgroundColor: emailFocused ? colors.surface : colors.card,
-                borderColor: emailFocused ? colors.primary : colors.border
-              }
-            ]}>
-              <Icon
-                name="person-outline"
-                size={20}
-                color={emailFocused ? colors.primary : colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="example@gmail.com"
-                placeholderTextColor={colors.textLight}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-              />
-            </View>
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Password</Text>
-            <View style={[
-              styles.inputWrapper,
-              {
-                backgroundColor: passwordFocused ? colors.surface : colors.card,
-                borderColor: passwordFocused ? colors.primary : colors.border
-              }
-            ]}>
-              <Icon
-                name="lock-closed-outline"
-                size={20}
-                color={passwordFocused ? colors.primary : colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="Insert your password here"
-                placeholderTextColor={colors.textLight}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                <Icon
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color={passwordFocused ? colors.primary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Login Button */}
-          <TouchableOpacity
-            style={[styles.loginButton, { backgroundColor: colors.primary }]}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            <Text style={styles.loginButtonText}>
-              {isLoading ? 'Logging in...' : 'Log in'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Forgot Password */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('ForgotPassword')}
-            style={styles.forgotPasswordContainer}
-          >
-            <Text style={[styles.forgotPassword, { color: colors.textSecondary }]}>Forgot password?</Text>
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textSecondary }]}>OR</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
-          <TouchableOpacity style={[styles.googleButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={handleGoogleSignIn}>
-            <Icon name="logo-google" size={20} color="#DB4437" />
-            <Text style={[styles.googleButtonText, { color: colors.text }]}>
-              {isLoading ? 'Signing in...' : 'Sign in with Google'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Sign Up Link */}
-          <View style={styles.signupContainer}>
-            <Text style={[styles.signupText, { color: colors.textSecondary }]}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={[styles.signupLink, { color: colors.primary }]}>Sign Up</Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Icon name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
-        </Animated.View>
-      </ScrollView>
+
+          {/* Welcome Section */}
+          <Animated.View
+            style={[
+              styles.welcomeSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            <Text style={[styles.heading, { color: colors.text }]}>Welcome Back!</Text>
+            <Text style={[styles.subheading, { color: colors.textSecondary }]}>
+              Log In to your Placoo account to explore your dream place to live across the whole world!
+            </Text>
+          </Animated.View>
+
+          {/* Form Section */}
+          <Animated.View
+            style={[
+              styles.formSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }]
+              }
+            ]}
+          >
+
+            {/* Username/Email Input */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Username</Text>
+              <View style={[
+                styles.inputWrapper,
+                {
+                  backgroundColor: emailFocused ? colors.surface : colors.card,
+                  borderColor: emailFocused ? colors.primary : colors.border
+                }
+              ]}>
+                <Icon
+                  name="person-outline"
+                  size={20}
+                  color={emailFocused ? colors.primary : colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={[styles.input, { color: colors.text }]}
+                  placeholder="example@gmail.com"
+                  placeholderTextColor={colors.textLight}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+              <View style={[
+                styles.inputWrapper,
+                {
+                  backgroundColor: passwordFocused ? colors.surface : colors.card,
+                  borderColor: passwordFocused ? colors.primary : colors.border
+                }
+              ]}>
+                <Icon
+                  name="lock-closed-outline"
+                  size={20}
+                  color={passwordFocused ? colors.primary : colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={[styles.input, { color: colors.text }]}
+                  placeholder="Insert your password here"
+                  placeholderTextColor={colors.textLight}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Icon
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color={passwordFocused ? colors.primary : colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Login Button */}
+            <TouchableOpacity
+              style={[styles.loginButton, { backgroundColor: colors.primary }]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.loginButtonText}>
+                {isLoading ? 'Logging in...' : 'Log in'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ForgotPassword')}
+              style={styles.forgotPasswordContainer}
+            >
+              <Text style={[styles.forgotPassword, { color: colors.textSecondary }]}>Forgot password?</Text>
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+              <Text style={[styles.dividerText, { color: colors.textSecondary }]}>OR</Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            </View>
+
+            <TouchableOpacity style={[styles.googleButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={handleGoogleSignIn}>
+              <Icon name="logo-google" size={20} color="#DB4437" />
+              <Text style={[styles.googleButtonText, { color: colors.text }]}>
+                {isLoading ? 'Signing in...' : 'Sign in with Google'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Sign Up Link */}
+            <View style={styles.signupContainer}>
+              <Text style={[styles.signupText, { color: colors.textSecondary }]}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={[styles.signupLink, { color: colors.primary }]}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
